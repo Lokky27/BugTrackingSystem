@@ -3,6 +3,7 @@ package models;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -14,17 +15,14 @@ public class Project
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "project_id")
     private Long id;
 
     private String name;
 
     private Date deadLine;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "project")
-    private List<Task> tasks;
+    private String tasks;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "project")
-    private Set<User> users;
+    private String users;
 
 }

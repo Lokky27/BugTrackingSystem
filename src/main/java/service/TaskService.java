@@ -1,18 +1,15 @@
 package service;
 
 import dao.TaskDao;
+import dao.TaskDaoImpl;
 import models.Task;
 
 public class TaskService
 {
-    private TaskDao taskDao;
-
-    public TaskService(TaskDao taskDao)
-    {
-        this.taskDao = taskDao;
-    }
+    private TaskDao taskDao = new TaskDaoImpl();
 
     public Task findTaskById(Long id)
+
     {
         return taskDao.findTaskById(id);
     }

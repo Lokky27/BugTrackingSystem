@@ -3,12 +3,8 @@ package utils;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.internal.MetadataImpl;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.boot.registry.internal.StandardServiceRegistryImpl;
-import org.hibernate.cfg.Configuration;
-
 
 public class HibernateSessionFactoryUtil
 {

@@ -22,18 +22,9 @@ public class Task
 
     private String type;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumns({
-            @JoinColumn(name = "project_id", insertable = false, updatable = false)
+    private String project;
 
-    })
-    private Project project;
-
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumns({
-            @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    })
-    private User user;
+    private String user;
 
     private String description;
 }
