@@ -21,8 +21,7 @@ public class Project
 
     private Date deadLine;
 
-    private String tasks;
-
-    private String users;
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    private List<Task> tasks;
 
 }

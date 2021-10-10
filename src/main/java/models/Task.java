@@ -1,8 +1,10 @@
 package models;
 
-import lombok.Data;
+import lombok.*;
+import org.hibernate.Hibernate;
 
 import javax.persistence.*;
+import java.util.Objects;
 
 @Data
 @Entity
@@ -10,21 +12,27 @@ import javax.persistence.*;
 public class Task
 {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(name = "theme")
     private String theme;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "priority")
-    private Priority priority;
 
     private String type;
 
-    private String project;
-
-    private String user;
+    @Enumerated(EnumType.STRING)
+    private Priority priority;
 
     private String description;
+
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumns({
+            @JoinColumn(name = "user_id")
+    })
+    private User user;
+
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumns({
+            @JoinColumn(name = "project_id")
+    })
+    private Project project;
 }

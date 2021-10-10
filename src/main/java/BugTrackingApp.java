@@ -1,4 +1,3 @@
-import dao.TaskDaoImpl;
 import models.Priority;
 import models.Project;
 import models.Task;
@@ -9,67 +8,76 @@ import service.UserService;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.*;
 
 public class BugTrackingApp
 {
-    private static TaskService service = new TaskService();
     private static UserService userService = new UserService();
+    private static TaskService taskService = new TaskService();
     private static ProjectService projectService = new ProjectService();
 
-    public static void main(String[] args) throws ParseException {
-        Task task = createTask("Bug fixes", "Bug Tracking application", "This task about bug fixing",
-                "John Dow", Priority.HIGH, "Daily");
-        Task task1 = createTask("Create new feature", "Bug Tracking application",
-                "This is task about creating of new features", "John Gold", Priority.MEDIUM, "New features");
-        service.saveTask(task);
-        service.saveTask(task1);
+    public static void main(String[] args) throws ParseException
+    {
+        Set<Task> tasks = new HashSet<>();
+        List<Task> projectTasks = new ArrayList<>();
 
-        User admin1 = createUser("John Dow", "Bug fixing tasks", "Bug Tracking application");
-        User admin2 = createUser("Just Tommy", "Create new feature, test this feature", "New project");
+        User user = createUser("Peter Jackson");
+        User user1 = createUser("James Cameron");
 
-        userService.saveUser(admin1);
-        userService.saveUser(admin2);
+        Project project = createProject("Hobbit", new SimpleDateFormat("dd.MM.yyyy").parse("22.12.2018"));
+        Project project1 = createProject("Termitanor 5", new SimpleDateFormat("dd.MM.yyyy").parse("31.12.2018"));
 
-        Project project = createProject("Bug Tracking Application", new SimpleDateFormat("dd.MM.yyyy").parse("31.12.2021"),
-                                        "Create new feature", "Some programmer");
+        Task task = createTask("Make movie", "Fantastic", Priority.HIGH, "Make a great movie");
+        Task task1 = createTask("Assembling", "Fantasy", Priority.MEDIUM, "Make an assembling of movie");
+        Task task2 = createTask("Promotion", "Fantasy", Priority.HIGH, "To promote the movie");
 
-        Project project1 = createProject("ToDo list on Spring Boot", new SimpleDateFormat("dd.MM.yyyy").parse("30.11.2021"),
-                                        "1. Start project; 2. Create plan", "John Gold");
+        tasks.add(task);
+        tasks.add(task1);
+        tasks.add(task2);
+
+        task.setUser(user);
+        task.setProject(project);
+
+        task1.setUser(user1);
+        task1.setProject(project1);
+
+        task2.setUser(user);
+        task2.setProject(project);
+
+        taskService.saveTask(task);
+        taskService.saveTask(task1);
+        taskService.saveTask(task2);
+
+        userService.saveUser(user);
+        userService.saveUser(user1);
 
         projectService.saveProject(project);
         projectService.saveProject(project1);
     }
 
-    private static Task createTask(String theme, String project, String description,
-                                   String user, Priority priority, String type)
+    private static User createUser(String name)
     {
-       Task task = new Task();
-       task.setTheme(theme);
-       task.setProject(project);
-       task.setDescription(description);
-       task.setUser(user);
-       task.setPriority(priority);
-       task.setType(type);
-       return task;
+        User user = new User();
+        user.setName(name);
+        return user;
     }
 
-    private static User createUser(String name, String task, String project)
-    {
-        User admin = new User();
-        admin.setName(name);
-        admin.setTasks(task);
-        admin.setProject(project);
-        return admin;
-    }
-
-    private static Project createProject(String name, Date deadLine, String tasks, String users)
+    private static Project createProject(String name, Date deadLine)
     {
         Project project = new Project();
         project.setName(name);
         project.setDeadLine(deadLine);
-        project.setTasks(tasks);
-        project.setUsers(users);
         return project;
     }
+
+    private static Task createTask(String type, String theme, Priority priority, String description)
+    {
+        Task task = new Task();
+        task.setType(type);
+        task.setDescription(description);
+        task.setTheme(theme);
+        task.setPriority(priority);
+        return task;
+    }
+
 }
