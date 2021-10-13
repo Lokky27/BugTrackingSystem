@@ -23,15 +23,18 @@ public class UserService
     public void saveUser(User user)
     {
         userDao.saveUser(user);
+        System.out.println("Пользователь " + user.getName() + " добавлен в систему!");
     }
 
     public void updateUser(User user)
     {
         userDao.updateUser(user);
+        System.out.println("Пользователь " + user.getName() + " обновлен!");
     }
 
     public void deleteUser(User user)
     {
         userDao.deleteUser(user);
+        System.out.println("Пользователь " + user.getName() + " удален!");
     }
 }

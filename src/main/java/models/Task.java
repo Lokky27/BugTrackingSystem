@@ -6,7 +6,10 @@ import org.hibernate.Hibernate;
 import javax.persistence.*;
 import java.util.Objects;
 
-@Data
+@Getter
+@Setter
+@ToString
+@RequiredArgsConstructor
 @Entity
 @Table(name = "tasks")
 public class Task
@@ -28,11 +31,26 @@ public class Task
     @JoinColumns({
             @JoinColumn(name = "user_id")
     })
+    @ToString.Exclude
     private User user;
 
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumns({
             @JoinColumn(name = "project_id")
     })
+    @ToString.Exclude
     private Project project;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        Task task = (Task) o;
+        return id != null && Objects.equals(id, task.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

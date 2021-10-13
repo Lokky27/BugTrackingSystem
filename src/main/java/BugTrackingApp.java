@@ -6,8 +6,9 @@ import service.ProjectService;
 import service.TaskService;
 import service.UserService;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class BugTrackingApp
@@ -16,68 +17,113 @@ public class BugTrackingApp
     private static TaskService taskService = new TaskService();
     private static ProjectService projectService = new ProjectService();
 
-    public static void main(String[] args) throws ParseException
+    private static Scanner scanner;
+
+    public static void main(String[] args)
     {
-        Set<Task> tasks = new HashSet<>();
-        List<Task> projectTasks = new ArrayList<>();
+        System.out.println("Система отслеживания задач/ошибок\n" +
+                "Выберите одну из следующих комманд: \n" +
+                "\tshow_users - показать список всех пользователей в системе\n" +
+                "\tshow_projects - показать список всех проектов\n" +
+                "\tadd_user - добавить нового пользователя\n" +
+                "\tadd_project - добавить новый проект\n" +
+                "\tdownload - выгрузить все данные системы в файл");
+        scanner = new Scanner(System.in);
+        for (; ;)
+        {
+            String command = scanner.nextLine();
+            if (command.equals("show_users"))
+            {
+                List<User> users = userService.getAllUsers();
+                for (User user : users)
+                {
+                    System.out.println("id: " + user.getId() + "\n\tимя: " + user.getName() +
+                            "\n\tзадач у пользователя: " + user.getTasks().size());
+                }
+            }
+            if (command.equals("show_projects"))
+            {
+                List<Project> projects = projectService.getAllProjects();
+                for (Project project : projects)
+                {
+                    System.out.println("id: " + project.getId() + "\n\tназвание: " + project.getName() +
+                            "\n\tсрок сдачи: " + project.getDeadLine() + "\n\tзадач на проекте: " + project.getTasks().size());
+                }
+            }
+            if (command.equals("download"))
+            {
+                try {
+                    System.out.println("Введите путь до файла, который хотите использовать");
+                    String path = scanner.nextLine();
+                    writeDataIntoFile(new File(path));
+                }
+                catch (IOException exception)
+                {
+                    exception.printStackTrace();
+                }
+            }
+            if (command.equals("-q"))
+            {
+                break;
+            }
 
-        User user = createUser("Peter Jackson");
-        User user1 = createUser("James Cameron");
-
-        Project project = createProject("Hobbit", new SimpleDateFormat("dd.MM.yyyy").parse("22.12.2018"));
-        Project project1 = createProject("Termitanor 5", new SimpleDateFormat("dd.MM.yyyy").parse("31.12.2018"));
-
-        Task task = createTask("Make movie", "Fantastic", Priority.HIGH, "Make a great movie");
-        Task task1 = createTask("Assembling", "Fantasy", Priority.MEDIUM, "Make an assembling of movie");
-        Task task2 = createTask("Promotion", "Fantasy", Priority.HIGH, "To promote the movie");
-
-        tasks.add(task);
-        tasks.add(task1);
-        tasks.add(task2);
-
-        task.setUser(user);
-        task.setProject(project);
-
-        task1.setUser(user1);
-        task1.setProject(project1);
-
-        task2.setUser(user);
-        task2.setProject(project);
-
-        taskService.saveTask(task);
-        taskService.saveTask(task1);
-        taskService.saveTask(task2);
-
-        userService.saveUser(user);
-        userService.saveUser(user1);
-
-        projectService.saveProject(project);
-        projectService.saveProject(project1);
+        }
     }
 
-    private static User createUser(String name)
+    private static User getUser(String message)
     {
-        User user = new User();
-        user.setName(name);
-        return user;
+        for (; ;)
+        {
+            System.out.println(message);
+            long userId = Long.parseLong(scanner.nextLine());
+            User user = userService.findUserById(userId);
+            if (user != null)
+            {
+                return user;
+            }
+
+            System.out.println("Такого пользователя нет в системе");
+        }
     }
 
-    private static Project createProject(String name, Date deadLine)
+    private static Project getProject(String message)
     {
-        Project project = new Project();
-        project.setName(name);
-        project.setDeadLine(deadLine);
-        return project;
+        for (; ;)
+        {
+            System.out.println(message);
+            long projectId = Long.parseLong(scanner.nextLine());
+            Project project = projectService.findProjectById(projectId);
+            if (project != null)
+            {
+                return project;
+            }
+            System.out.println("Такого проекта нет в системе");
+        }
     }
 
-    private static Task createTask(String type, String theme, Priority priority, String description)
+    private static void writeDataIntoFile(File file) throws IOException
     {
-        Task task = new Task();
-        task.setType(type);
-        task.setDescription(description);
-        task.setTheme(theme);
-        task.setPriority(priority);
-        return task;
+        FileWriter writer = new FileWriter(file);
+        StringBuilder header = new StringBuilder();
+        header.append("id").append(",").append("theme").append(",").append("type").append(",")
+                .append("description").append(",").append("priority").append(",").append("user_id").
+                append(",").append("user name").append(",").append("project_id").append(",").append("project_name").
+                append(",").append("deadline").append("\n");
+        writer.write(header.toString());
+        List<Task> allTasks = taskService.findAllTasks();
+        for (Task task : allTasks)
+        {
+            StringBuilder itemBuilder = new StringBuilder();
+            itemBuilder.append(task.getId()).append(",").append(task.getTheme()).append(",")
+                    .append(task.getType()).append(",").append(task.getDescription())
+                    .append(",").append(task.getPriority()).append(",").append(task.getUser().getId())
+                    .append(",").append(task.getUser().getName()).append(",").append(task.getProject().getId())
+                    .append(",").append(task.getProject().getName()).append(",").append(task.getProject().getDeadLine());
+            writer.write(itemBuilder.toString());
+        }
+        writer.flush();
+        writer.close();
+        System.out.println("Записано в файл " + file.getPath());
     }
 
 }

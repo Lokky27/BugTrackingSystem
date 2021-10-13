@@ -5,10 +5,7 @@ import org.hibernate.Hibernate;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 @Setter
@@ -26,7 +23,7 @@ public class User
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @ToString.Exclude
-    private Set<Task> tasks = new HashSet<>();
+    private List<Task> tasks = new ArrayList<>();
 
 
     @Override
