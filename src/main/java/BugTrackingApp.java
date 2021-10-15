@@ -314,6 +314,8 @@ public class BugTrackingApp
             task.setPriority(priority);
             task.setUser(user);
             task.setProject(project);
+            user.getTasks().add(task);
+            project.getTasks().add(task);
             return task;
         }
     }
