@@ -13,6 +13,7 @@ import service.UserService;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.SQLOutput;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -31,160 +32,262 @@ public class BugTrackingApp
 
     public static void main(String[] args)
     {
-        System.out.println("Система отслеживания задач/ошибок\n" +
-                "Выберите одну из следующих комманд: \n" +
-                "\t-list users - показать список всех пользователей в системе\n" +
-                "\t-list projects - показать список всех проектов\n" +
-                "\t-get user - выбрать пользователя\n" +
-                "\t-get project - выбрать проект\n" +
-                "\t-a user - добавить нового пользователя\n" +
-                "\t-a project - добавить новый проект\n" +
-                "\t-a task - добавить новую задачу\n" +
-                "\tunload - выгрузить все данные системы в файл");
+        System.out.println("Система отслеживания задач/ошибок");
 
         scanner = new Scanner(System.in);
-        for (; ;)
+        for (; ; )
         {
+            System.out.println("Выберите одну из следующих команд: \n" +
+                    "\tlist users - показать список всех пользователей в системе\n" +
+                    "\tlist projects - показать список всех проектов\n" +
+                    "\tuser - работа с пользователями\n" +
+                    "\tproject - работа с проектами\n" +
+                    "\tunload - выгрузить все данные системы в файл\n" +
+                    "\tquit - завершить работу программой");
+
             System.out.print("Введите команду: ");
             String command = scanner.nextLine();
             LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл команду {}", command);
-            if (command.equals("-list users"))
+            if (command.equals("list users"))
             {
                 userService.getAllUsers().forEach(user -> {
-                    System.out.println("\tid: " + user.getId() + "\n\tимя: " + user.getName() +
+                    System.out.println(
+                            "\tID: " + user.getId() +
+                            "\n\tимя: " + user.getName() +
                             "\n\tзадач у пользователя: " + user.getTasks().size());
                 });
                 continue;
             }
 
-            if (command.equals("-list projects"))
+            if (command.equals("list projects"))
             {
                 projectService.getAllProjects().forEach(project -> {
-                    System.out.println("\tid: " + project.getId() + "\n\tназвание: " + project.getName() +
-                            "\n\tсрок сдачи: " + project.getDeadLine() + "\n\tзадач на проекте: " + project.getTasks().size());
-
+                    System.out.println(
+                            "\tID: " + project.getId() +
+                            "\n\tназвание: " + project.getName() +
+                            "\n\tсрок сдачи: " + project.getDeadLine() +
+                            "\n\tзадач на проекте: " + project.getTasks().size());
                 });
-
                 continue;
             }
 
-            if (command.equals("-get user"))
+            if (command.equals("user"))
             {
+                System.out.println("Вы выбрали работу с пользователями");
+                System.out.println("Здесь доступны следующие команды: " +
+                        "\n\tget - выбрать пользователя по ID;" +
+                        "\n\tlist-task - просмотр задач пользователя;" +
+                        "\n\tadd - добавить нового пользователя;" +
+                        "\n\tupdate - обновить данные пользователя (полностью);" +
+                        "\n\tdelete - удалить пользователя.");
+
+                System.out.print("Введите команду: ");
                 String userCommand = scanner.nextLine();
                 LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввел команду {}", userCommand);
-                User user = getUser("Введите ID пользователя");
-                System.out.println("Введите одну из следующих команд: \n" +
-                        "\t-update - изменить пользователя\n" +
-                        "\t-delete - удалить пользователя из базы\n" +
-                        "\t-list tasks - получить список задач пользователя\n" +
-                        "\t-get task - получить задачу по ID\n +" +
-                        "\t-back - назад");
-                if (userCommand.equals("-update"))
+                if (userCommand.equals("get"))
                 {
+                    User user = getUser("Введите ID пользователя");
+                    System.out.println("Введите одну из следующих команд: \n" +
+                            "\tinfo - распечатать информацию о пользователе\n" +
+                            "\tlist-tasks - получить список задач пользователя\n" +
+                            "\tget-task - получить задачу по ID\n" +
+                            "\tadd-task - добавить новую задачу" +
+                            "\t-back - назад");
+                    System.out.print("Введите команду: ");
+                    String taskCommand = scanner.nextLine();
+                    LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввел команду {}", userCommand);
+                    if (taskCommand.equals("info"))
+                    {
+                        System.out.println("" +
+                                "\tID: " + user.getId() +
+                                "\n\tимя: " + user.getName() +
+                                "\n\tзадач у пользователя: " + user.getTasks().size());
+                        continue;
+                    }
+                    if (taskCommand.equals("list-tasks"))
+                    {
+                        user.getTasks().forEach(task -> {
+                            System.out.println(
+                                    "\tID: " + task.getId() +
+                                            "\n\tтип: " + task.getType() +
+                                            "\n\tтема: " + task.getTheme() +
+                                            "\n\tописание: " + task.getDescription() +
+                                            "\n\tприоритет: " + task.getPriority() +
+                                            "\n\tпользователь: " + task.getUser().getName() +
+                                            "\n\tпроект: " + task.getProject().getName());
+                        });
+                        continue;
+                    }
+
+                    if (taskCommand.equals("add-task"))
+                    {
+                        System.out.println("Создаём новую задачу");
+                        Task task = createTask();
+                        task.setProject(getProject("Введите ID проекта, к который добавляем задачу"));
+                        task.setUser(user);
+                        userService.findUserById(task.getUser().getId()).getTasks().add(task);
+                        projectService.findProjectById(task.getProject().getId()).getTasks().add(task);
+                        taskService.saveTask(task);
+                        continue;
+                    }
+
+                    if (taskCommand.equals("get-task"))
+                    {
+                        Task task = getTask("Введите ID задачи");
+                        System.out.println("Введите одну из следующих команд: \n" +
+                                "\tinfo - распечатать информацию о задаче\n" +
+                                "\tupdate - обновить задачу задачу\n" +
+                                "\tdelete - удалить задачу");
+                        String innerTaskCommand = scanner.nextLine();
+                        LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввел команду {}", userCommand);
+                        if (innerTaskCommand.equals("info"))
+                        {
+                            System.out.println(
+                                    "\tID: " + task.getId() +
+                                    "\n\ttype: " + task.getType() +
+                                    "\n\ttheme: " + task.getTheme() +
+                                    "\n\tdescription: " + task.getDescription() +
+                                    "\n\tpriority: " + task.getPriority() +
+                                    "\n\tuser: " + task.getUser().getName());
+                            continue;
+                        }
+                        if (innerTaskCommand.equals("update"))
+                        {
+                            taskService.updateTask(task);
+                        }
+                        if (innerTaskCommand.equals("delete"))
+                        {
+                            taskService.deleteTask(task);
+                        }
+                    }
+                }
+
+                if (userCommand.equals("update"))
+                {
+                    User user = getUser("Введите ID изменяемого пользователя");
                     userService.updateUser(user);
                 }
 
-                if (userCommand.equals("-delete"))
+                if (userCommand.equals("delete"))
                 {
+                    User user = getUser("Введите ID удаляемого пользователя");
                     userService.deleteUser(user);
                 }
-                if (userCommand.equals("-list tasks"))
-                {
-                    user.getTasks().forEach(task -> {
-                        System.out.println("ID: " + task.getId() + "\n\ttype: " + task.getType() +
-                                "\n\ttheme: " + task.getTheme() + "\n\tdescription: " + task.getDescription() +
-                                "\n\tpriority: " + task.getPriority() + "\n\tназвание проекта" + task.getProject().getName());
-                    });
-                }
-                if (userCommand.equals("-get task"))
-                {
-                    Task task = getTask("Введите ID задачи");
-                    System.out.println("Выберите следующие действия: " +
-                            "\n\t-update - изменить задачу" +
-                            "\n\t-delete - удалить задачу" +
-                            "\n\t-back - назад");
-                    System.out.print("Введите команду: ");
-                    LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввел команду {}", userCommand);
-                    String taskCommand = scanner.nextLine();
-                    if (taskCommand.equals("-update"))
-                    {
-                        taskService.updateTask(task);
-                    }
-                    if (taskCommand.equals("-delete"))
-                    {
-                        taskService.deleteTask(task);
-                    }
-                    if (taskCommand.equals("-back")) continue;
-                }
-                if (userCommand.equals("-back"))
-                {
-                    continue;
-                }
             }
 
-            if (command.equals("-get project"))
+            if (command.equals("project"))
             {
+                System.out.println("Вы выбрали работу с пользователями");
+                System.out.println("Здесь доступны следующие команды: " +
+                        "\n\tget - выбрать пользователя по ID;" +
+                        "\n\tadd - добавить нового пользователя;" +
+                        "\n\tlist - показать все проекты;" +
+                        "\n\tupdate - обновить данные пользователя (полностью);" +
+                        "\n\tdelete - удалить пользователя.");
+
+                System.out.print("Введите команду: ");
                 String projectCommand = scanner.nextLine();
                 LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввел команду {}", projectCommand);
-                Project project = getProject("Введите ID проекта");
-                System.out.println("Введите одну из следующих команд: \n" +
-                        "\t-update - изменить пользователя\n" +
-                        "\t-delete - удалить пользователя из базы\n" +
-                        "\t-list tasks - получить список задач пользователя\n" +
-                        "\t-get task - получить задачу по ID\n +" +
-                        "\t-back - назад");
-                if (projectCommand.equals("-update"))
-                {
-                    projectService.updateProject(project);
-                }
 
-                if (projectCommand.equals("-delete"))
+                if (projectCommand.equals("get"))
                 {
-                    projectService.deleteProject(project);
-                }
-                if (projectCommand.equals("-list tasks"))
-                {
-                    project.getTasks().forEach(task -> {
-                        System.out.println("ID: " + task.getId() + "\n\ttype: " + task.getType() +
-                                "\n\ttheme: " + task.getTheme() + "\n\tdescription: " + task.getDescription() +
-                                "\n\tpriority: " + task.getPriority() + "\n\tназвание проекта" + task.getUser().getName());
-                    });
-                }
-                if (projectCommand.equals("-get task"))
-                {
-                    Task task = getTask("Введите ID задачи");
-                    System.out.println("Выберите следующие действия: " +
-                            "\n\t-update - изменить задачу" +
-                            "\n\t-delete - удалить задачу" +
-                            "\n\t-back - назад");
+                    Project project = getProject("Введите ID проекта");
+                    System.out.println("Введите одну из следующих команд: \n" +
+                            "\tinfo - распечатать информацию о проекте\n" +
+                            "\tlist-tasks - получить список задач на проекте\n" +
+                            "\tget-task - получить задачу по ID\n" +
+                            "\tadd-task - добавить новую задачу");
                     System.out.print("Введите команду: ");
                     String taskCommand = scanner.nextLine();
-                    LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввел команду {}", taskCommand);
-                    if (taskCommand.equals("-update"))
+                    if (taskCommand.equals("info"))
                     {
-                        taskService.updateTask(task);
+                        System.out.println("" +
+                                "\tID: " + project.getId() +
+                                "\n\tимя: " + project.getName() +
+                                "\n\tсрок сдачи: " + project.getDeadLine() +
+                                "\n\tзадач в проекте пользователя: " + project.getTasks().size());
+                        continue;
                     }
-                    if (taskCommand.equals("-delete"))
+                    if (taskCommand.equals("list-tasks"))
                     {
-                        taskService.deleteTask(task);
+                        project.getTasks().forEach(task -> {
+                            System.out.println(
+                                    "\tID: " + task.getId() +
+                                            "\n\tтип: " + task.getType() +
+                                            "\n\tтема: " + task.getTheme() +
+                                            "\n\tописание: " + task.getDescription() +
+                                            "\n\tприоритет: " + task.getPriority() +
+                                            "\n\tпользователь: " + task.getUser().getName() +
+                                            "\n\tпроект: " + task.getProject().getName());
+                        });
+                        continue;
                     }
-                    if (taskCommand.equals("-back")) continue;
+
+                    if (taskCommand.equals("add-task"))
+                    {
+                        System.out.println("Создаём новую задачу");
+                        Task task = createTask();
+                        task.setProject(project);
+                        task.setUser(getUser("Введите ID пользователя, которого назначаем на задачу"));
+                        userService.findUserById(task.getUser().getId()).getTasks().add(task);
+                        projectService.findProjectById(task.getProject().getId()).getTasks().add(task);
+                        taskService.saveTask(task);
+                        continue;
+                    }
+
+                    if (taskCommand.equals("get-task"))
+                    {
+                        Task task = getTask("Введите ID задачи");
+                        System.out.println("Введите одну из следующих команд: \n" +
+                                "\tinfo - распечатать информацию о задаче\n" +
+                                "\tupdate - обновить задачу задачу\n" +
+                                "\tdelete - удалить задачу");
+                        String innerTaskCommand = scanner.nextLine();
+                        LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввел команду {}", taskCommand);
+                        if (innerTaskCommand.equals("info"))
+                        {
+                            System.out.println(
+                                    "\tID: " + task.getId() +
+                                            "\n\ttype: " + task.getType() +
+                                            "\n\ttheme: " + task.getTheme() +
+                                            "\n\tdescription: " + task.getDescription() +
+                                            "\n\tpriority: " + task.getPriority() +
+                                            "\n\tuser: " + task.getUser().getName());
+                            continue;
+                        }
+                    }
                 }
-                if (projectCommand.equals("-back"))
+                if (projectCommand.equals("list"))
                 {
+                    projectService.getAllProjects().forEach(project -> {
+                        System.out.println("\tID: " + project.getId() +
+                                "\n\tНазвание: " + project.getName() +
+                                "\n\tСрок сдачи: " + project.getDeadLine() +
+                                "\n\tЗадач в проекте: " + project.getTasks().size()
+                        );
+                    });
                     continue;
                 }
-            }
-            if (command.equals("-a user"))
-            {
-                User user = createUser("Введите имя пользователя");
-                userService.saveUser(user);
-            }
+                if (projectCommand.equals("add"))
+                {
+                    Project project = createProject();
+                    projectService.saveProject(project);
+                    continue;
+                }
 
-            if (command.equals("-a project"))
-            {
-                Project project = createProject();
-                projectService.saveProject(project);
+                if (projectCommand.equals("update"))
+                {
+                    Project project = getProject("Введите ID обновляемого проекта");
+                    projectService.saveProject(project);
+                    continue;
+                }
+
+                if (projectCommand.equals("delete"))
+                {
+                    Project project = getProject("Введите ID удаляемого проекта");
+                    projectService.deleteProject(project);
+                    continue;
+                }
             }
 
             if (command.equals("unload"))
@@ -200,25 +303,36 @@ public class BugTrackingApp
                     LOGGER.error(exception);
                 }
             }
-            if (command.equals("-a task"))
-            {
-                Task task = createTask();
-                taskService.saveTask(task);
-            }
-            if (command.equals("-q"))
+
+            if (command.equals("quit"))
             {
                 break;
             }
-            else {
+            else
+            {
                 LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь ввел команду{}", INVALID_QUERIES_MARKER);
                 System.out.println("Неизвестная команда!");
             }
         }
     }
 
+    private static Task getTask(String message)
+    {
+        for (; ; )
+        {
+            System.out.print(message + " ");
+            long seekTask = Long.parseLong(scanner.nextLine());
+            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
+            if (taskService.findTaskById(seekTask) != null)
+            {
+                return taskService.findTaskById(seekTask);
+            }
+        }
+    }
+
     private static User getUser(String message)
     {
-        for (; ;)
+        for (; ; )
         {
             System.out.println(message);
             long userId = Long.parseLong(scanner.nextLine().trim());
@@ -233,10 +347,9 @@ public class BugTrackingApp
         }
     }
 
-    private static Project getProject(String message)
+    private static Project getProject (String message)
     {
-        for (; ;)
-        {
+        for (; ; ) {
             System.out.println(message);
             long projectId = Long.parseLong(scanner.nextLine().trim());
             LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
@@ -250,10 +363,9 @@ public class BugTrackingApp
         }
     }
 
-    private static User createUser(String message)
+    private static User createUser (String message)
     {
-        for (; ;)
-        {
+        for (; ; ) {
             System.out.println(message);
             User user = new User();
 
@@ -264,17 +376,16 @@ public class BugTrackingApp
         }
     }
 
-    private static Project createProject()
+    private static Project createProject ()
     {
-        for (; ;)
+        for (; ; )
         {
             Project newProject = new Project();
-            System.out.println("Введите название нового проекта");
+            System.out.print("Введите название нового проекта: ");
             String name = scanner.nextLine().trim();
             LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.println("Введите срок сдачи проекта в формате дд.ММ.гггг");
-            try
-            {
+            System.out.print("Введите срок сдачи проекта в формате дд.ММ.гггг: ");
+            try {
                 Date date = new SimpleDateFormat("dd.MM.yyyy").parse(scanner.nextLine());
                 LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
                 newProject.setName(name);
@@ -285,61 +396,37 @@ public class BugTrackingApp
             {
                 LOGGER.error(e);
             }
-
         }
     }
 
     private static Task createTask()
     {
-        for (; ;)
+        for (; ; )
         {
             Task task = new Task();
-            System.out.println("Введите тему задачи");
+            System.out.print("Введите тему задачи: ");
             String theme = scanner.nextLine();
             LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.println("Введите тип задачи");
+            System.out.print("Введите тип задачи: ");
             String type = scanner.nextLine();
             LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.println("Введите описание задачи");
+            System.out.print("Введите описание задачи: ");
             String description = scanner.nextLine();
             LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.println("Задайте приоритет LOW, MEDIUM, HIGH");
+            System.out.print("Задайте приоритет LOW, MEDIUM, HIGH: ");
             Priority priority = Priority.valueOf(scanner.nextLine());
             LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            User user = getUser("Выберите пользователя для задачи по ID ");
-            Project project = getProject("Выберите для какого проекта ставится задача");
             task.setTheme(theme);
             task.setType(type);
             task.setDescription(description);
             task.setPriority(priority);
-            task.setUser(user);
-            task.setProject(project);
-            user.getTasks().add(task);
-            project.getTasks().add(task);
             return task;
         }
     }
 
-    private static Task getTask(String message)
+    private static void writeDataIntoFile(File userFile) throws IOException
     {
-        for (; ;)
-        {
-            System.out.println(message);
-            long seekTask = Long.parseLong(scanner.nextLine());
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            if (taskService.findTaskById(seekTask) != null)
-            {
-                return taskService.findTaskById(seekTask);
-            }
-
-            LOGGER.info(INVALID_QUERIES_MARKER, "Задача не найдена {}", INVALID_QUERIES_MARKER);
-            System.out.println("Такой задачи не существует");
-        }
-    }
-
-    private static void writeDataIntoFile(File file) throws IOException
-    {
-        FileWriter writer = new FileWriter(file);
+        FileWriter writer = new FileWriter(userFile);
         StringBuilder header = new StringBuilder();
         header.append("id").append(",").append("theme").append(",").append("type").append(",")
                 .append("description").append(",").append("priority").append(",").append("user_id").
@@ -347,8 +434,7 @@ public class BugTrackingApp
                 append(",").append("deadline").append("\n");
         writer.write(header.toString());
         List<Task> allTasks = taskService.findAllTasks();
-        for (Task task : allTasks)
-        {
+        for (Task task : allTasks) {
             StringBuilder itemBuilder = new StringBuilder();
             itemBuilder.append(task.getId()).append(",").append(task.getTheme()).append(",")
                     .append(task.getType()).append(",").append(task.getDescription())
@@ -359,6 +445,6 @@ public class BugTrackingApp
         }
         writer.flush();
         writer.close();
-        System.out.println("Записано в файл " + file.getPath());
+        System.out.println("Записано в файл " + userFile.getPath());
     }
 }
