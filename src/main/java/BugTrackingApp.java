@@ -287,7 +287,7 @@ public class BugTrackingApp
             }
             else
             {
-                LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь ввел команду{}", INVALID_QUERIES_MARKER);
+                LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь ввел команду {}", INVALID_QUERIES_MARKER);
                 System.out.println("Неизвестная команда!");
             }
         }
