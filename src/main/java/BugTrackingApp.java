@@ -13,7 +13,6 @@ import service.UserService;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.SQLOutput;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -51,6 +50,11 @@ public class BugTrackingApp
             LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл команду {}", command);
             if (command.equals("list users"))
             {
+                if (userService.getAllUsers().isEmpty())
+                {
+                    System.out.println("Нет ни одного пользователя в системе!");
+                    continue;
+                }
                 userService.getAllUsers().forEach(user -> {
                     System.out.println(
                             "\tID: " + user.getId() +
@@ -62,6 +66,11 @@ public class BugTrackingApp
 
             if (command.equals("list projects"))
             {
+                if (projectService.getAllProjects().isEmpty())
+                {
+                    System.out.println("Нет ни одного проекта в системе!");
+                    continue;
+                }
                 projectService.getAllProjects().forEach(project -> {
                     System.out.println(
                             "\tID: " + project.getId() +
@@ -243,7 +252,18 @@ public class BugTrackingApp
                 if (taskCommand.equals("add"))
                 {
                     System.out.println("Добавляем задачу");
+                    System.out.print("Введите ID проекта ");
+                    Project project = projectService.findProjectById(Long.parseLong(scanner.nextLine()));
+                    LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
+                    System.out.print("Введите ID исполнителя ");
+                    User user = userService.findUserById(Long.parseLong(scanner.nextLine()));
+                    LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
+
                     Task task = createTask();
+                    task.setProject(project);
+                    task.setUser(user);
+                    project.getTasks().add(task);
+                    user.getTasks().add(task);
                     taskService.saveTask(task);
                     continue;
                 }
@@ -393,19 +413,10 @@ public class BugTrackingApp
             System.out.print("Задайте приоритет LOW, MEDIUM, HIGH: ");
             Priority priority = Priority.valueOf(scanner.nextLine());
             LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.println("Введите ID пользователя для задачи");
-            User user = userService.findUserById(Long.parseLong(scanner.nextLine().trim()));
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.println("Введите ID проекта");
-            Project project = projectService.findProjectById(Long.parseLong(scanner.nextLine().trim()));
             task.setTheme(theme);
             task.setType(type);
             task.setDescription(description);
             task.setPriority(priority);
-            task.setUser(user);
-            user.getTasks().add(task);
-            task.setProject(project);
-            project.getTasks().add(task);
             return task;
         }
     }
