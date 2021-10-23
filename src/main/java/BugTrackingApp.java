@@ -155,6 +155,7 @@ public class BugTrackingApp
                 System.out.println("Здесь доступны следующие команды: " +
                         "\n\tget - выбрать проект по ID;" +
                         "\n\tadd - добавить новый проект;" +
+                        "\n\tadd-task - добавить задачу в проект;" +
                         "\n\tlist - показать все проекты;" +
                         "\n\ttasks - получить список всех задач на проекте" +
                         "\n\tupdate - обновить данные проекта (полностью);" +
@@ -173,6 +174,17 @@ public class BugTrackingApp
                             "\n\tСрок сдачи: " + project.getDeadLine() +
                             "\n\tЗадач в проекте: " + project.getTasks().size()
                     );
+                }
+
+                if (projectCommand.equals("add-task"))
+                {
+                    Project project = getProject("Введите ID проекта");
+                    Task task = createTask();
+
+                    task.setProject(project);
+                    project.getTasks().add(task);
+                    taskService.saveTask(task);
+                    continue;
                 }
 
                 if (projectCommand.equals("tasks"))

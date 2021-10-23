@@ -1,7 +1,6 @@
 package service;
 
 import dao.*;
-import models.Project;
 import models.Task;
 
 import java.util.List;
@@ -25,11 +24,11 @@ public class TaskService
 
     public void saveTask(Task task)
     {
-        if (task.getUser() == null || userDao.findUserById(task.getUser().getId()) == null)
+        if (task.getUser() == null)
         {
             throw new NullPointerException("Невозможно сохранить. Задача не назначена пользователю");
         }
-        if (task.getProject() == null || projectDao.getProjectById(task.getProject().getId()) == null)
+        if (task.getProject() == null)
         {
             throw new NullPointerException("Невозможно сохранить. Задача ссылается на несуществующий прокет");
         }

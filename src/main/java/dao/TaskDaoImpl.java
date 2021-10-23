@@ -35,7 +35,7 @@ public class TaskDaoImpl implements TaskDao
     @Override
     public void saveTask(Task savingTask)
     {
-        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().getCurrentSession();
         Transaction transaction = session.beginTransaction();
         session.save(savingTask);
         transaction.commit();
