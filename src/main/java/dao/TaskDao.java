@@ -13,10 +13,10 @@ public interface TaskDao
     public List<Task> findAllTasks();
 
 //    Обновление задачи
-    public void updateTask(Task newTask);
+    public void updateTask(Task newTask, Long userId, Long projectId);
 //    Сохранить задачу
-    public void saveTask(Task savingTask);
+    public void saveTask(Task savingTask, Long userId, Long projectId);
 //    Удалить задачу
-    public void deleteTask(Task task);
+    public void deleteTask(Task task, Long userId, Long projectId);
 
 }

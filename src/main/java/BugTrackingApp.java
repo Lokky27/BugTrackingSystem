@@ -19,7 +19,7 @@ import java.util.*;
 
 public class BugTrackingApp
 {
-    private static Logger LOGGER = LogManager.getLogger(BugTrackingApp.class);
+    private static final Logger LOGGER = LogManager.getLogger(BugTrackingApp.class);
 
     private static final Marker COMMAND_HISTORY_MARKER = MarkerManager.getMarker("INPUT_HISTORY");
     private static final Marker INVALID_QUERIES_MARKER = MarkerManager.getMarker("INVALID_QUERIES");
@@ -179,11 +179,9 @@ public class BugTrackingApp
                 if (projectCommand.equals("add-task"))
                 {
                     Project project = getProject("Введите ID проекта");
+                    User user = getUser("Задайте ID исполнителя");
                     Task task = createTask();
-
-                    task.setProject(project);
-                    project.getTasks().add(task);
-                    taskService.saveTask(task);
+                    taskService.saveTask(task, project.getId(), user.getId());
                     continue;
                 }
 
@@ -199,6 +197,7 @@ public class BugTrackingApp
                                 "\n\tuser: " + task.getUser().getName() +
                                 "\n\tproject: " + task.getProject().getName());
                     });
+                    continue;
                 }
 
                 if (projectCommand.equals("list"))
@@ -265,32 +264,27 @@ public class BugTrackingApp
                 {
                     System.out.println("Добавляем задачу");
                     System.out.print("Введите ID проекта ");
-                    Project project = projectService.findProjectById(Long.parseLong(scanner.nextLine()));
+                    Long projectId = Long.parseLong(scanner.nextLine());
                     LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
                     System.out.print("Введите ID исполнителя ");
-                    User user = userService.findUserById(Long.parseLong(scanner.nextLine()));
+                    Long userId = Long.parseLong(scanner.nextLine());
                     LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-
                     Task task = createTask();
-                    task.setProject(project);
-                    task.setUser(user);
-                    project.getTasks().add(task);
-                    user.getTasks().add(task);
-                    taskService.saveTask(task);
+                    taskService.saveTask(task, projectId, userId);
                     continue;
                 }
 
                 if (taskCommand.equals("update"))
                 {
                     Task task = getTask("Введите ID обновляемой задачи");
-                    taskService.updateTask(task);
+                    taskService.updateTask(task, task.getUser().getId(), task.getProject().getId());
                     continue;
                 }
 
                 if (taskCommand.equals("delete"))
                 {
                     Task task = getTask("Введите ID удаляемой задачи");
-                    taskService.deleteTask(task);
+                    taskService.deleteTask(task, task.getUser().getId(), task.getProject().getId());
                     continue;
                 }
 
@@ -309,7 +303,7 @@ public class BugTrackingApp
                 }
                 catch (IOException exception)
                 {
-                    LOGGER.error(exception);
+                    LOGGER.error(exception.getStackTrace());
                 }
             }
 
