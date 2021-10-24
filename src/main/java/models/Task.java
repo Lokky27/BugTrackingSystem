@@ -27,14 +27,14 @@ public class Task
 
     private String description;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumns({
             @JoinColumn(name = "user_id")
     })
     @ToString.Exclude
     private User user;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumns({
             @JoinColumn(name = "project_id")
     })

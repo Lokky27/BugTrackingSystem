@@ -28,12 +28,17 @@ public class TaskDaoImpl implements TaskDao
     }
 
     @Override
-    public void updateTask(Task newTask, Long userId, Long projectId)
+    public void updateTask(Long updatedTaskId, Task newTask)
     {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
-        User user = session.get(User.class, userId);
-        Project project = session.get(Project.class, projectId);
+        Task taskToUpdate = session.get(Task.class, updatedTaskId);
+        taskToUpdate.setTheme(newTask.getTheme());
+        taskToUpdate.setType(newTask.getType());
+        taskToUpdate.setDescription(newTask.getDescription());
+        taskToUpdate.setPriority(newTask.getPriority());
+        taskToUpdate.setUser(newTask.getUser());
+        taskToUpdate.setProject(newTask.getProject());
         session.update(newTask);
         transaction.commit();
         session.close();
@@ -54,14 +59,15 @@ public class TaskDaoImpl implements TaskDao
     }
 
     @Override
-    public void deleteTask(Task task, Long userId, Long projectId)
+    public void deleteTask(Long taskId, Long userId, Long projectId)
     {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
         User user = session.get(User.class, userId);
         Project project = session.get(Project.class, projectId);
-        task.setUser(user);
-        task.setProject(project);
+        Task task = session.get(Task.class, taskId);
+        user.getTasks().remove(task);
+        project.getTasks().remove(task);
         session.delete(task);
         transaction.commit();
         session.close();

@@ -12,7 +12,7 @@ public interface ProjectDao
 
     public void saveProject(Project project);
 
-    public void updateProject(Project project);
+    public void updateProject(Long projectIdToUpdate, Project newProject);
 
-    public void deleteProject(Project project);
+    public void deleteProject(Long projectIdToDelete);
 }

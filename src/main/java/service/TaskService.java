@@ -38,17 +38,17 @@ public class TaskService
         System.out.println("Задача добавлена!");
     }
 
-    public void updateTask(Task task, Long userId, Long projectId)
+    public void updateTask(Long taskToUpdate, Task newTask)
 
     {
-        taskDao.updateTask(task, userId, projectId);
+        taskDao.updateTask(taskToUpdate, newTask);
         System.out.println("Задача обновлена");
     }
 
-    public void deleteTask(Task task, Long userId, Long projectId)
+    public void deleteTask(Long taskId, Long userId, Long projectId)
 
     {
-        taskDao.deleteTask(task, userId, projectId);
+        taskDao.deleteTask(taskId, userId, projectId);
         System.out.println("Задача удалена");
     }
 }

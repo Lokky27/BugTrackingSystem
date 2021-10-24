@@ -26,15 +26,15 @@ public class UserService
         System.out.println("Пользователь " + user.getName() + " добавлен в систему!");
     }
 
-    public void updateUser(User user)
+    public void updateUser(Long userIdToUpdate, User newUser)
     {
-        userDao.updateUser(user);
-        System.out.println("Пользователь " + user.getName() + " обновлен!");
+        userDao.updateUser(userIdToUpdate, newUser);
+        System.out.println("Пользователь обновлен!");
     }
 
-    public void deleteUser(User user)
+    public void deleteUser(Long deletedUserId)
     {
-        userDao.deleteUser(user);
-        System.out.println("Пользователь " + user.getName() + " удален!");
+        userDao.deleteUser(deletedUserId);
+        System.out.println("Пользователь удален!");
     }
 }

@@ -1,5 +1,7 @@
 package dao;
 
+import models.Project;
+import models.Task;
 import models.User;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -33,21 +35,27 @@ public class UserDaoImpl implements UserDao
     }
 
     @Override
-    public void updateUser(User user)
+    public void updateUser(Long idUserToUpdate, User newUser)
     {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
-        session.update(user);
+        User userToUpdate = session.get(User.class, idUserToUpdate);
+        userToUpdate.setName(newUser.getName());
+        userToUpdate.setTasks(newUser.getTasks());
+        session.update(userToUpdate);
         transaction.commit();
         session.close();
     }
 
     @Override
-    public void deleteUser(User user)
+    public void deleteUser(Long deletedUserId)
     {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
-        session.delete(user);
+        User deletedUser = session.get(User.class, deletedUserId);
+        List<Task> tasks = deletedUser.getTasks();
+        deletedUser.getTasks().removeAll(tasks);
+        session.delete(deletedUser);
         transaction.commit();
         session.close();
     }

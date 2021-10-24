@@ -26,15 +26,15 @@ public class ProjectService
         System.out.println("Проект" + project.getName() + " добавлен в систему");
     }
 
-    public void updateProject(Project project)
+    public void updateProject(Long projectIdToUpdate, Project newProject)
     {
-        projectDao.updateProject(project);
-        System.out.println("Проект " + project.getName() + " обновлен!");
+        projectDao.updateProject(projectIdToUpdate, newProject);
+        System.out.println("Проект обновлен!");
     }
 
-    public void deleteProject(Project project)
+    public void deleteProject(Long projectIdToDelete)
     {
-        projectDao.deleteProject(project);
-        System.out.println("Проект " + project.getName() + " удален из системы!");
+        projectDao.deleteProject(projectIdToDelete);
+        System.out.println("Проект удален из системы!");
     }
 }

@@ -32,21 +32,26 @@ public class ProjectDaoImpl implements ProjectDao
     }
 
     @Override
-    public void updateProject(Project project)
+    public void updateProject(Long projectIdToUpdate, Project newProject)
     {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
-        session.update(project);
+        Project projectToUpdate = session.get(Project.class, projectIdToUpdate);
+        projectToUpdate.setName(newProject.getName());
+        projectToUpdate.setDeadLine(newProject.getDeadLine());
+        projectToUpdate.setTasks(newProject.getTasks());
+        session.update(projectToUpdate);
         transaction.commit();
         session.close();
     }
 
     @Override
-    public void deleteProject(Project project)
+    public void deleteProject(Long projectIdToDelete)
     {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
-        session.delete(project);
+        Project projectToDelete = session.get(Project.class, projectIdToDelete);
+        session.delete(projectToDelete);
         transaction.commit();
         session.close();
     }
