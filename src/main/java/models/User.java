@@ -9,7 +9,6 @@ import java.util.*;
 
 @Getter
 @Setter
-@ToString
 @RequiredArgsConstructor
 @Entity
 @Table(name = "users")
@@ -30,14 +29,26 @@ public class User
     public boolean equals(Object o)
     {
         if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        if (o == null || o.getClass() != this.getClass()) return false;
         User user = (User) o;
-        return id != null && Objects.equals(id, user.id);
+        return id.equals(user.id) &&
+                (name == user.name || (name != null && name.equals(user.getName())));
     }
 
     @Override
     public int hashCode()
     {
-        return super.hashCode();
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        return result;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ID: " + getId() + ", " +
+                "Name: " + getName() + ", " +
+                "Tasks: " + getTasks().size();
     }
 }

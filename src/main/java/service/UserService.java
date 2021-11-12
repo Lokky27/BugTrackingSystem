@@ -8,8 +8,12 @@ import java.util.List;
 
 public class UserService
 {
-    private UserDao userDao = new UserDaoImpl();
+    private final UserDao userDao;
 
+    public UserService ()
+    {
+        this.userDao = new UserDaoImpl();
+    }
     public User findUserById(Long id)
     {
         return userDao.findUserById(id);
