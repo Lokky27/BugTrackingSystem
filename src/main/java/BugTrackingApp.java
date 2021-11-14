@@ -1,3 +1,4 @@
+import dao.*;
 import models.Priority;
 import models.Project;
 import models.Task;
@@ -12,8 +13,6 @@ import service.UserService;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -38,9 +37,13 @@ public class BugTrackingApp
     private static final String UPDATE_COMMAND = "update";
     private static final String DELETE_COMMAND = "delete";
 
-    private static UserService userService = new UserService();
-    private static TaskService taskService = new TaskService();
-    private static ProjectService projectService = new ProjectService();
+    private static UserDao userDao = new UserDaoImpl();
+    private static ProjectDao projectDao = new ProjectDaoImpl();
+    private static TaskDao taskDao = new TaskDaoImpl();
+
+    private static UserService userService = new UserService(userDao);
+    private static TaskService taskService = new TaskService(taskDao, userDao, projectDao);
+    private static ProjectService projectService = new ProjectService(projectDao);
 
     private static Scanner scanner;
 
@@ -153,8 +156,7 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 System.out.println("Что-то здесь не так: " + exception.getMessage());
-                exception.printStackTrace();
-                LOGGER.error(exception.getMessage());
+                LOGGER.error(exception.getStackTrace());
             }
         }
     }
@@ -177,36 +179,45 @@ public class BugTrackingApp
                 projectService.saveProject(newProject);
                 break;
             }
-            catch (ParseException e)
+            catch (Exception exception)
             {
-                System.out.println(e.getMessage());
-                LOGGER.error(e);
+                LOGGER.error("Ошибка при добавлении проекта {}", exception.getMessage());
+                System.out.printf("Ошибка при добавлении проекта %s", exception.getMessage());
             }
         }
     }
 
-    private static void updateProject() throws ParseException
+    private static void updateProject()
     {
         for (; ;)
         {
-            Project newProject = new Project();
-            System.out.print("Введите новое название для проекта: ");
-            String newName = scanner.nextLine();
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.print("Введите новый срок сдачи: ");
-            Date newDeadline = new SimpleDateFormat("dd.MM.yyyy").parse(scanner.nextLine());
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            newProject.setName(newName);
-            newProject.setDeadLine(newDeadline);
-            System.out.print("Введите ID проекта, который нужно обновить: ");
-            Long updatedProjectId = Long.parseLong(scanner.nextLine());
-            if (projectService.findProjectById(updatedProjectId) != null)
+            try
             {
-                projectService.updateProject(updatedProjectId, newProject);
-                break;
+                Project newProject = new Project();
+                System.out.print("Введите новое название для проекта: ");
+                String newName = scanner.nextLine();
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
+                System.out.print("Введите новый срок сдачи: ");
+                Date newDeadline = new SimpleDateFormat("dd.MM.yyyy").parse(scanner.nextLine());
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
+                newProject.setName(newName);
+                newProject.setDeadLine(newDeadline);
+                System.out.print("Введите ID проекта, который нужно обновить: ");
+                Long updatedProjectId = Long.parseLong(scanner.nextLine());
+                if (projectService.findProjectById(updatedProjectId) != null)
+                {
+                    projectService.updateProject(updatedProjectId, newProject);
+                    break;
+                }
+                LOGGER.info(INVALID_QUERIES_MARKER, "Проект c ID {} не найден", updatedProjectId);
+                System.out.printf("Проект с ID: %d не существует", updatedProjectId);
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Проект c ID {} не найден", updatedProjectId);
-            System.out.printf("Проект с ID: %d не существует", updatedProjectId);
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка при обновлении проекта {}", exception.getMessage());
+                System.out.printf("Ошибка при обновлении проекта %s", exception.getMessage());
+            }
+
         }
     }
 
@@ -214,15 +225,23 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.print("Введите ID проекта, который нужно удалить: ");
-            Long deletedProjectId = Long.parseLong(scanner.nextLine());
-            if (projectService.findProjectById(deletedProjectId) != null)
+            try
             {
-                projectService.deleteProject(deletedProjectId);
-                break;
+                System.out.print("Введите ID проекта, который нужно удалить: ");
+                Long deletedProjectId = Long.parseLong(scanner.nextLine());
+                if (projectService.findProjectById(deletedProjectId) != null)
+                {
+                    projectService.deleteProject(deletedProjectId);
+                    break;
+                }
+                LOGGER.info(INVALID_QUERIES_MARKER, "Проект с ID {} не найден", deletedProjectId);
+                System.out.printf("Проект с ID: %d не существует", deletedProjectId);
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Проект с ID {} не найден", deletedProjectId);
-            System.out.printf("Проект с ID: %d не существует", deletedProjectId);
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка при удалении проекта: {}", exception.getMessage());
+                System.out.printf("Ошибка при удалении проекта: %s", exception.getMessage());
+            }
         }
     }
 
@@ -230,42 +249,50 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.println("Введите ID проекта: ");
-            Long projectId = Long.parseLong(scanner.nextLine());
-            Project project = projectService.findProjectById(projectId);
-            System.out.println("Вы выбрали проект: " + project.getName() +
+            try
+            {
+                System.out.println("Введите ID проекта: ");
+                Long projectId = Long.parseLong(scanner.nextLine());
+                Project project = projectService.findProjectById(projectId);
+                System.out.println("Вы выбрали проект: " + project.getName() +
                         "\nВыберите действие: ");
-            System.out.println("\tЧтобы просмотреть информацию о задаче введите: " + INFO_COMMAND +
+                System.out.println("\tЧтобы просмотреть информацию о задаче введите: " + INFO_COMMAND +
                         "\n\tЧтобы посмотреть список всех задач на проекте введите: " + TASKS +
                         "\n\tЧтобы добавить новую задачу в проект введите: " + ADD_TASK +
                         "\n\tЧтобы обновить задачу на проекте введите: " + UPDATE_COMMAND +
                         "\n\tЧтобы удалить задачу из проекта введите: " + DELETE_COMMAND +
                         "\n\tДля перехода в главное меню введите: " + BACK);
-            System.out.print("Введите комманду: ");
-            String userInput = scanner.nextLine().trim();
-            if (userInput.equals(BACK)) break;
-            switch (userInput)
-            {
-                case INFO_COMMAND :
-                    getTaskInfo();
-                    break;
-                case TASKS :
-                    project.getTasks().forEach(System.out::println);
-                    break;
-                case ADD_TASK :
-                    addTaskIntoProject(projectId);
-                    break;
-                case UPDATE_COMMAND :
-                    updateTaskInProject(projectId);
-                    break;
-                case DELETE_COMMAND :
-                    deleteTaskFromProject(projectId);
-                    break;
-                default :
-                    LOGGER.info(INVALID_QUERIES_MARKER, "Проекта с ID {} нет в системе", projectId);
-                    System.out.printf("Проекта с ID %d нет в системе\n", projectId);
+                System.out.print("Введите комманду: ");
+                String userInput = scanner.nextLine().trim();
+                if (userInput.equals(BACK)) break;
+                switch (userInput)
+                {
+                    case INFO_COMMAND:
+                        getTaskInfo();
+                        break;
+                    case TASKS:
+                        project.getTasks().forEach(System.out::println);
+                        break;
+                    case ADD_TASK:
+                        addTaskIntoProject(projectId);
+                        break;
+                    case UPDATE_COMMAND:
+                        updateTaskInProject(projectId);
+                        break;
+                    case DELETE_COMMAND:
+                        deleteTaskFromProject(projectId);
+                        break;
+                    default:
+                        LOGGER.info(INVALID_QUERIES_MARKER, "Проекта с ID {} нет в системе", projectId);
+                        System.out.printf("Проекта с ID %d нет в системе\n", projectId);
+                }
+                break;
             }
-            break;
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка при получении проекта: {}", exception.getMessage());
+                System.out.printf("Ошибка при получении проекта: %s", exception.getMessage());
+            }
         }
     }
 
@@ -273,16 +300,23 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.println("Введите ID задачи: ");
-            Long taskId = Long.parseLong(scanner.nextLine().trim());
-            if (taskService.findTaskById(taskId) != null)
+            try
             {
-                Task task = taskService.findTaskById(taskId);
-                System.out.println(task);
-                break;
+                System.out.println("Введите ID задачи: ");
+                Long taskId = Long.parseLong(scanner.nextLine().trim());
+                if (taskService.findTaskById(taskId) != null) {
+                    Task task = taskService.findTaskById(taskId);
+                    System.out.println(task);
+                    break;
+                }
+                LOGGER.info(INVALID_QUERIES_MARKER, "Задачи с ID {} нет в проекте", taskId);
+                System.out.printf("Задача с ID %d не найдена\n", taskId);
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Задачи с ID {} нет в проекте", taskId);
-            System.out.printf("Задача с ID %d не найдена\n", taskId);
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка при получении задачи: {}", exception.getMessage());
+                System.out.printf("Ошибка при получении задачи: %s", exception.getMessage());
+            }
         }
     }
 
@@ -290,13 +324,21 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            Project project = projectService.findProjectById(projectId);
-            Task task = createTask();
-            User user = getUser();
-            taskService.saveTask(task, user.getId(), projectId);
-            project.getTasks().add(task);
-            user.getTasks().add(task);
-            break;
+            try
+            {
+                Project project = projectService.findProjectById(projectId);
+                Task task = createTask();
+                User user = getUser();
+                taskService.saveTask(task, user.getId(), projectId);
+                project.getTasks().add(task);
+                user.getTasks().add(task);
+                break;
+            }
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка при добавлении задачи в проект: {}", exception.getMessage());
+                System.out.printf("Ошибка при добавлении задачи в проект: %s", exception.getMessage());
+            }
         }
     }
 
@@ -304,23 +346,31 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            Project project = projectService.findProjectById(projectId);
-            if (project != null)
+            try
             {
-                System.out.print("Введите ID задачи, которую нужно обновить: ");
-                Long taskIdToUpdate = Long.parseLong(scanner.nextLine().trim());
-                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ID", taskIdToUpdate);
-                if (taskService.findTaskById(taskIdToUpdate) != null)
+                Project project = projectService.findProjectById(projectId);
+                if (project != null)
                 {
-                    Task newTask = createTask();
-                    taskService.updateTask(taskIdToUpdate, newTask);
-                    break;
+                    System.out.print("Введите ID задачи, которую нужно обновить: ");
+                    Long taskIdToUpdate = Long.parseLong(scanner.nextLine().trim());
+                    LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ID", taskIdToUpdate);
+                    if (taskService.findTaskById(taskIdToUpdate) != null)
+                    {
+                        Task newTask = createTask();
+                        taskService.updateTask(taskIdToUpdate, newTask);
+                        break;
+                    }
+                    LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена", taskIdToUpdate);
+                    System.out.printf("Задача с ID %d не найдена", taskIdToUpdate);
                 }
-                LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена", taskIdToUpdate);
-                System.out.printf("Задача с ID %d не найдена", taskIdToUpdate);
+                LOGGER.info(INVALID_QUERIES_MARKER, "Проект с ID {} не найден", projectId);
+                System.out.printf("Проект с ID %d не найден", projectId);
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Проект с ID {} не найден", projectId);
-            System.out.printf("Проект с ID %d не найден", projectId);
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка при обновлении задачи в проекте: {}", exception.getMessage());
+                System.out.printf("Ошибка при обновлении задачи в проекте: %s", exception.getMessage());
+            }
         }
     }
 
@@ -328,18 +378,26 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.println("Введите ID задачи, которую нужно удалить");
-            Long deletedTaskId = Long.parseLong(scanner.nextLine().trim());
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл ID {} ", deletedTaskId);
-            if (taskService.findTaskById(deletedTaskId) != null)
+            try
             {
-                Task deletedTask = taskService.findTaskById(deletedTaskId);
-                Long userIdOfDeletedTask = deletedTask.getUser().getId();
-                taskService.deleteTask(deletedTaskId, userIdOfDeletedTask, projectId);
-                break;
+                System.out.println("Введите ID задачи, которую нужно удалить");
+                Long deletedTaskId = Long.parseLong(scanner.nextLine().trim());
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл ID {} ", deletedTaskId);
+                if (taskService.findTaskById(deletedTaskId) != null)
+                {
+                   Task deletedTask = taskService.findTaskById(deletedTaskId);
+                   Long userIdOfDeletedTask = deletedTask.getUser().getId();
+                   taskService.deleteTask(deletedTaskId, userIdOfDeletedTask, projectId);
+                   break;
+                }
+                LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена!", deletedTaskId);
+                System.out.printf("Задача с ID %d не найдена", deletedTaskId);
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена!", deletedTaskId);
-            System.out.printf("Задача с ID %d не найдена", deletedTaskId);
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка при удалении задачи из проекта: {}", exception.getMessage());
+                System.out.printf("Ошибка при удалении задачи из проекта: %s", exception.getMessage());
+            }
         }
     }
 
@@ -347,16 +405,24 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.println("Введите ID исполнителя для задачи: ");
-            long userId = Long.parseLong(scanner.nextLine().trim());
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            User user = userService.findUserById(userId);
-            if (user != null)
+            try
             {
-                return user;
+                System.out.println("Введите ID исполнителя для задачи: ");
+                long userId = Long.parseLong(scanner.nextLine().trim());
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
+                User user = userService.findUserById(userId);
+                if (user != null)
+                {
+                    return user;
+                }
+                LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь {} не найден", INVALID_QUERIES_MARKER);
+                System.out.println("Такого пользователя нет в системе");
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь {} не найден", INVALID_QUERIES_MARKER);
-            System.out.println("Такого пользователя нет в системе");
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка получения исполнителя по ID: {}", exception.getMessage());
+                System.out.printf("Ошибка получения исполнителя по ID: %s", exception.getMessage());
+            }
         }
     }
 
@@ -364,13 +430,21 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            User newUser = new User();
-            System.out.println("Введите имя для нового пользователя!");
-            String userName = scanner.nextLine().trim();
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ", userName);
-            newUser.setName(userName);
-            userService.saveUser(newUser);
-            break;
+            try
+            {
+                User newUser = new User();
+                System.out.println("Введите имя для нового пользователя!");
+                String userName = scanner.nextLine().trim();
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ", userName);
+                newUser.setName(userName);
+                userService.saveUser(newUser);
+                break;
+            }
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка добавления пользователя: {}", exception.getMessage());
+                System.out.printf("Ошибка добавления пользователя: %s", exception.getMessage());
+            }
         }
     }
 
@@ -378,21 +452,30 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.print("Введите ID пользователя для обновления: ");
-            Long userIdToUpdate = Long.parseLong(scanner.nextLine().trim());
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ", userIdToUpdate);
-            if (userService.findUserById(userIdToUpdate) != null)
+            try
             {
-                User newUser = new User();
-                System.out.println("Введите новое имя для пользователя");
-                String newName = scanner.nextLine().trim();
-                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ", newName);
-                newUser.setName(newName);
-                userService.updateUser(userIdToUpdate, newUser);
-                break;
+                System.out.print("Введите ID пользователя для обновления: ");
+                Long userIdToUpdate = Long.parseLong(scanner.nextLine().trim());
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ", userIdToUpdate);
+                if (userService.findUserById(userIdToUpdate) != null)
+                {
+                    User newUser = new User();
+                    System.out.println("Введите новое имя для пользователя");
+                    String newName = scanner.nextLine().trim();
+                    LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ", newName);
+                    newUser.setName(newName);
+                    userService.updateUser(userIdToUpdate, newUser);
+                    break;
+                }
+                LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь с ID {} не найден", userIdToUpdate);
+                System.out.printf("Пользователь с ID %d не найден", userIdToUpdate);
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь с ID {} не найден", userIdToUpdate);
-            System.out.printf("Пользователь с ID %d не найден", userIdToUpdate);
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка обновления пользователя: {}", exception.getMessage());
+                System.out.printf("Ошибка обновления пользователя: %s", exception.getMessage());
+            }
+
         }
     }
 
@@ -400,16 +483,23 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.print("Введите ID пользователя, которого нужно удалить: ");
-            Long userIdToDelete = Long.parseLong(scanner.nextLine().trim());
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", userIdToDelete);
-            if (userService.findUserById(userIdToDelete) != null)
+            try
             {
-                userService.deleteUser(userIdToDelete);
-                break;
+                System.out.print("Введите ID пользователя, которого нужно удалить: ");
+                Long userIdToDelete = Long.parseLong(scanner.nextLine().trim());
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", userIdToDelete);
+                if (userService.findUserById(userIdToDelete) != null) {
+                    userService.deleteUser(userIdToDelete);
+                    break;
+                }
+                LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь с ID {} не найден", userIdToDelete);
+                System.out.printf("Пользователь с ID %d не найден", userIdToDelete);
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь с ID {} не найден", userIdToDelete);
-            System.out.printf("Пользователь с ID %d не найден", userIdToDelete);
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка удаления пользователя: {}", exception.getMessage());
+                System.out.printf("Ошибка удаления пользователя: %s", exception.getMessage());
+            }
         }
 
     }
@@ -418,44 +508,50 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.println("Введите ID пользователя: ");
-            Long userId = Long.parseLong(scanner.nextLine());
-            User user = userService.findUserById(userId);
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", userId);
-            System.out.println("Пользователь - " + user.getName());
-            System.out.println("Здесь доступны следующие команды: ");
-            System.out.println("\tЧтобы просмотреть информацию о задаче введите: " + INFO_COMMAND +
+            try {
+                System.out.println("Введите ID пользователя: ");
+                Long userId = Long.parseLong(scanner.nextLine());
+                User user = userService.findUserById(userId);
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", userId);
+                System.out.println("Пользователь - " + user.getName());
+                System.out.println("Здесь доступны следующие команды: ");
+                System.out.println("\tЧтобы просмотреть информацию о задаче введите: " + INFO_COMMAND +
                         "\n\tЧтобы посмотреть список всех задач у пользователя введите: " + TASKS +
                         "\n\tЧтобы добавить новую задачу пользователю введите: " + ADD_TASK +
                         "\n\tЧтобы обновить задачу у пользователя введите: " + UPDATE_COMMAND +
                         "\n\tЧтобы удалить задачу у пользователя введите: " + DELETE_COMMAND);
-            System.out.print("Введите комманду: ");
-            String userInput = scanner.nextLine().trim();
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл команду {}", userInput);
-            switch (userInput)
-            {
-                case INFO_COMMAND :
-                    getTaskInfo();
-                    break;
-                case TASKS :
-                    user.getTasks().forEach(System.out::println);
-                    break;
-                case ADD_TASK :
-                    addTaskToUser(userId);
-                    break;
+                System.out.print("Введите комманду: ");
+                String userInput = scanner.nextLine().trim();
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл команду {}", userInput);
+                switch (userInput) {
+                    case INFO_COMMAND:
+                        getTaskInfo();
+                        break;
+                    case TASKS:
+                        user.getTasks().forEach(System.out::println);
+                        break;
+                    case ADD_TASK:
+                        addTaskToUser(userId);
+                        break;
 
-                case UPDATE_COMMAND :
-                    updateUserTask(userId);
-                    break;
-                case DELETE_COMMAND :
-                    deleteTaskFromUser(userId);
-                    break;
-                default :
-                    LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь ввёл команду {} ", userInput);
-                    System.out.println("Неизвестная команда");
-                    continue;
+                    case UPDATE_COMMAND:
+                        updateUserTask(userId);
+                        break;
+                    case DELETE_COMMAND:
+                        deleteTaskFromUser(userId);
+                        break;
+                    default:
+                        LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь ввёл команду {} ", userInput);
+                        System.out.println("Неизвестная команда");
+                        continue;
+                }
+                break;
             }
-            break;
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка получения пользователя: {}", exception.getMessage());
+                System.out.printf("Ошибка получения пользователя: %s", exception.getMessage());
+            }
         }
     }
 
@@ -463,10 +559,18 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            Task task = createTask();
-            Project project = getProject();
-            taskService.saveTask(task, userId, project.getId());
-            break;
+            try
+            {
+                Task task = createTask();
+                Project project = getProject();
+                taskService.saveTask(task, userId, project.getId());
+                break;
+            }
+            catch (Exception exception)
+            {
+                LOGGER.info("Ошибка при добавлении задачи пользователю: {}", exception.getMessage());
+                System.out.printf("Ошибка при добавлении задачи пользователю: %s", exception.getMessage());
+            }
         }
     }
 
@@ -474,23 +578,31 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            User user = userService.findUserById(userId);
-            if (user != null)
+            try
             {
-                System.out.print("Введите ID задачи, которую нужно обновить: ");
-                Long taskIdToUpdate = Long.parseLong(scanner.nextLine().trim());
-                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ID", taskIdToUpdate);
-                if (taskService.findTaskById(taskIdToUpdate) != null)
+                User user = userService.findUserById(userId);
+                if (user != null)
                 {
-                    Task newTask = createTask();
-                    taskService.updateTask(taskIdToUpdate, newTask);
-                    break;
+                    System.out.print("Введите ID задачи, которую нужно обновить: ");
+                    Long taskIdToUpdate = Long.parseLong(scanner.nextLine().trim());
+                    LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ID", taskIdToUpdate);
+                    if (taskService.findTaskById(taskIdToUpdate) != null)
+                    {
+                        Task newTask = createTask();
+                        taskService.updateTask(taskIdToUpdate, newTask);
+                        break;
+                    }
+                    LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена", taskIdToUpdate);
+                    System.out.printf("Задача с ID %d не найдена", taskIdToUpdate);
                 }
-                LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена", taskIdToUpdate);
-                System.out.printf("Задача с ID %d не найдена", taskIdToUpdate);
+                LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь с ID {} не найден", userId);
+                System.out.printf("Пользователь с ID %d не найден", userId);
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь с ID {} не найден", userId);
-            System.out.printf("Пользователь с ID %d не найден", userId);
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка обновления задачи у пользователя: {}", exception.getMessage());
+                System.out.printf("Ошибка обновления задачи у пользователя: %s", exception.getMessage());
+            }
         }
     }
 
@@ -498,18 +610,26 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.println("Введите ID задачи, которую нужно удалить");
-            Long deletedTaskId = Long.parseLong(scanner.nextLine().trim());
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл ID {} ", deletedTaskId);
-            if (taskService.findTaskById(deletedTaskId) != null)
+            try
             {
-                Task deletedTask = taskService.findTaskById(deletedTaskId);
-                Long projectIdOfDeletedTask = deletedTask.getProject().getId();
-                taskService.deleteTask(deletedTaskId, userId, projectIdOfDeletedTask);
-                break;
+                System.out.println("Введите ID задачи, которую нужно удалить");
+                Long deletedTaskId = Long.parseLong(scanner.nextLine().trim());
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл ID {} ", deletedTaskId);
+                if (taskService.findTaskById(deletedTaskId) != null)
+                {
+                    Task deletedTask = taskService.findTaskById(deletedTaskId);
+                    Long projectIdOfDeletedTask = deletedTask.getProject().getId();
+                    taskService.deleteTask(deletedTaskId, userId, projectIdOfDeletedTask);
+                    break;
+                }
+                LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена!", deletedTaskId);
+                System.out.printf("Задача с ID %d не найдена", deletedTaskId);
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена!", deletedTaskId);
-            System.out.printf("Задача с ID %d не найдена", deletedTaskId);
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка удаления задачи у пользователя: {}", exception.getMessage());
+                System.out.printf("Ошибка удаления задачи у пользователя: %s", exception.getMessage());
+            }
         }
     }
 
@@ -517,16 +637,23 @@ public class BugTrackingApp
     {
         for (; ;)
         {
-            System.out.print("Введите ID проекта: ");
-            long projectId = Long.parseLong(scanner.nextLine().trim());
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            Project project = projectService.findProjectById(projectId);
-            if (project != null)
+            try
             {
-                return project;
+                System.out.print("Введите ID проекта: ");
+                long projectId = Long.parseLong(scanner.nextLine().trim());
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
+                Project project = projectService.findProjectById(projectId);
+                if (project != null) {
+                    return project;
+                }
+                LOGGER.info(INVALID_QUERIES_MARKER, "Проект {} не найден", INVALID_QUERIES_MARKER);
+                System.out.println("Такого проекта нет в системе");
             }
-            LOGGER.info(INVALID_QUERIES_MARKER, "Проект {} не найден", INVALID_QUERIES_MARKER);
-            System.out.println("Такого проекта нет в системе");
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка при получении проекта: {}", exception.getMessage());
+                System.out.printf("Ошибка при получении проекта: %s", exception.getMessage());
+            }
         }
     }
 
@@ -534,47 +661,65 @@ public class BugTrackingApp
     {
         for (; ; )
         {
-            Task task = new Task();
+            try
+            {
+                Task task = new Task();
 
-            System.out.print("Введите тему задачи: ");
-            String theme = scanner.nextLine();
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.print("Введите тип задачи: ");
-            String type = scanner.nextLine();
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.print("Введите описание задачи: ");
-            String description = scanner.nextLine();
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            System.out.print("Задайте приоритет LOW, MEDIUM, HIGH: ");
-            Priority priority = Priority.valueOf(scanner.nextLine());
-            LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
-            task.setTheme(theme);
-            task.setType(type);
-            task.setDescription(description);
-            task.setPriority(priority);
-            return task;
+                System.out.print("Введите тему задачи: ");
+                String theme = scanner.nextLine();
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", theme);
+                System.out.print("Введите тип задачи: ");
+                String type = scanner.nextLine();
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", type);
+                System.out.print("Введите описание задачи: ");
+                String description = scanner.nextLine();
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", description);
+                System.out.print("Задайте приоритет LOW, MEDIUM, HIGH: ");
+                String inputPriority = scanner.nextLine();
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", inputPriority);
+                Priority priority = Priority.valueOf(inputPriority);
+                task.setTheme(theme);
+                task.setType(type);
+                task.setDescription(description);
+                task.setPriority(priority);
+                return task;
+            }
+            catch (Exception exception)
+            {
+                LOGGER.error("Ошибка создания задачи: {} ",exception.getMessage());
+                System.out.printf("Ошибка создания задачи: %s", exception.getMessage());
+            }
         }
     }
 
-    private static void writeDataIntoFile(File userFile) throws IOException
+    private static void writeDataIntoFile(File userFile)
     {
-        FileWriter writer = new FileWriter(userFile);
-        String header = "id" + "," + "theme" + "," + "type" + "," +
-                "description" + "," + "priority" + "," + "user_id" +
-                "," + "user name" + "," + "project_id" + "," + "project_name" +
-                "," + "deadline" + "\n";
-        writer.write(header);
-        List<Task> allTasks = taskService.findAllTasks();
-        for (Task task : allTasks) {
-            String itemBuilder = task.getId() + "," + task.getTheme() + "," +
-                    task.getType() + "," + task.getDescription() +
-                    "," + task.getPriority() + "," + task.getUser().getId() +
-                    "," + task.getUser().getName() + "," + task.getProject().getId() +
-                    "," + task.getProject().getName() + "," + task.getProject().getDeadLine();
-            writer.write(itemBuilder);
+        try
+        {
+            FileWriter writer = new FileWriter(userFile);
+            String header = "id" + "," + "theme" + "," + "type" + "," +
+                    "description" + "," + "priority" + "," + "user_id" +
+                    "," + "user name" + "," + "project_id" + "," + "project_name" +
+                    "," + "deadline" + "\n";
+            writer.write(header);
+            List<Task> allTasks = taskService.findAllTasks();
+            for (Task task : allTasks)
+            {
+                String itemBuilder = task.getId() + "," + task.getTheme() + "," +
+                        task.getType() + "," + task.getDescription() +
+                        "," + task.getPriority() + "," + task.getUser().getId() +
+                        "," + task.getUser().getName() + "," + task.getProject().getId() +
+                        "," + task.getProject().getName() + "," + task.getProject().getDeadLine();
+                writer.write(itemBuilder);
+            }
+            writer.flush();
+            writer.close();
+            System.out.println("Записано в файл " + userFile.getPath());
         }
-        writer.flush();
-        writer.close();
-        System.out.println("Записано в файл " + userFile.getPath());
+        catch (Exception exception)
+        {
+            LOGGER.error("Ошибка при записи в файл: {}", exception.getMessage());
+            System.out.println("Ошибка при записи в файл" + exception.getMessage());
+        }
     }
 }

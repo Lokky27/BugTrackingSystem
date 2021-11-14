@@ -3,26 +3,34 @@ package service;
 import dao.*;
 import models.Task;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public class TaskService
 {
-    private TaskDao taskDao = new TaskDaoImpl();
-    private UserDao userDao = new UserDaoImpl();
-    private ProjectDao projectDao = new ProjectDaoImpl();
+    private TaskDao taskDao;
+    private UserDao userDao;
+    private ProjectDao projectDao;
 
-    public Task findTaskById(Long id)
+    public TaskService(TaskDao taskDao, UserDao userDao, ProjectDao projectDao)
+    {
+        this.taskDao = taskDao;
+        this.userDao = userDao;
+        this.projectDao = projectDao;
+    }
+
+    public Task findTaskById(Long id) throws SQLException
 
     {
         return taskDao.findTaskById(id);
     }
 
-    public List<Task> findAllTasks()
+    public List<Task> findAllTasks() throws SQLException
     {
         return taskDao.findAllTasks();
     }
 
-    public void saveTask(Task task, Long userId, Long projectId)
+    public void saveTask(Task task, Long userId, Long projectId) throws SQLException
     {
         if (userDao.findUserById(userId) == null)
         {
@@ -38,14 +46,14 @@ public class TaskService
         System.out.println("Задача добавлена!");
     }
 
-    public void updateTask(Long taskToUpdate, Task newTask)
+    public void updateTask(Long taskToUpdate, Task newTask) throws SQLException
 
     {
         taskDao.updateTask(taskToUpdate, newTask);
         System.out.println("Задача обновлена");
     }
 
-    public void deleteTask(Long taskId, Long userId, Long projectId)
+    public void deleteTask(Long taskId, Long userId, Long projectId) throws SQLException
 
     {
         taskDao.deleteTask(taskId, userId, projectId);

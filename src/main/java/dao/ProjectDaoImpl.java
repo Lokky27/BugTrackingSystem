@@ -1,58 +1,141 @@
 package dao;
 
 import models.Project;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 import utils.HibernateSessionFactoryUtil;
-
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectDaoImpl implements ProjectDao
 {
+    private static final Logger LOGGER = LogManager.getLogger(ProjectDaoImpl.class);
+
     @Override
-    public Project getProjectById(Long id)
+    public Project getProjectById(Long id) throws SQLException
     {
-        return HibernateSessionFactoryUtil.getSessionFactory().openSession().get(Project.class, id);
+        Session session = null;
+        Project project = null;
+        try
+        {
+            session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            project = session.get(Project.class, id);
+        }
+        catch (Exception exception)
+        {
+            LOGGER.error(exception.getMessage());
+            System.out.println("Ошибка при пополучении проекта по ID: " + exception.getMessage());
+        }
+        finally
+        {
+            if (session != null && session.isOpen())
+            {
+                session.close();
+            }
+        }
+        return project;
     }
 
     @Override
-    public List<Project> getAllProjects()
+    public List<Project> getAllProjects() throws SQLException
     {
-        return (List<Project>) HibernateSessionFactoryUtil.getSessionFactory().openSession().createQuery("from Project ").list();
+        Session session = null;
+        List projects = new ArrayList<>();
+        try
+        {
+            session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            projects = (List<Project>) session.createQuery("from Project").list();
+        }
+        catch (Exception exception)
+        {
+            LOGGER.error(exception.getMessage());
+            System.out.println("Ошибка при получении списка всех проектов: " + exception.getMessage());
+        }
+        finally
+        {
+            if (session != null && session.isOpen())
+            {
+                session.close();
+            }
+        }
+        return projects;
     }
 
     @Override
-    public void saveProject(Project project)
+    public void saveProject(Project project) throws SQLException
     {
-        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-        Transaction transaction = session.beginTransaction();
-        session.save(project);
-        transaction.commit();
-        session.close();
+        Session session = null;
+        try
+        {
+            session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            session.save(project);
+            session.getTransaction().commit();
+        }
+        catch (Exception exception)
+        {
+            LOGGER.error(exception.getMessage());
+            System.out.println("Ошибка при сохранении проекта: " + exception.getMessage());
+        }
+        finally
+        {
+            if (session != null && session.isOpen())
+            {
+                session.close();
+            }
+        }
     }
 
     @Override
     public void updateProject(Long projectIdToUpdate, Project newProject)
     {
-        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-        Transaction transaction = session.beginTransaction();
-        Project projectToUpdate = session.get(Project.class, projectIdToUpdate);
-        projectToUpdate.setName(newProject.getName());
-        projectToUpdate.setDeadLine(newProject.getDeadLine());
-        projectToUpdate.setTasks(newProject.getTasks());
-        session.update(projectToUpdate);
-        transaction.commit();
-        session.close();
+        Session session = null;
+        try
+        {
+            session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            session.update(newProject);
+            session.getTransaction().commit();
+        }
+        catch (Exception exception)
+        {
+            LOGGER.error(exception.getMessage());
+            System.out.printf("Ошибка обновления объекта с ID %d: %s", projectIdToUpdate, exception.getMessage());
+        }
+        finally
+        {
+            if (session != null && session.isOpen())
+            {
+                session.close();
+            }
+        }
     }
 
     @Override
-    public void deleteProject(Long projectIdToDelete)
+    public void deleteProject(Long projectIdToDelete) throws SQLException
     {
-        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-        Transaction transaction = session.beginTransaction();
-        Project projectToDelete = session.get(Project.class, projectIdToDelete);
-        session.delete(projectToDelete);
-        transaction.commit();
-        session.close();
+        Session session = null;
+        try
+        {
+            session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            Project projectToDelete = session.get(Project.class, projectIdToDelete);
+            session.delete(projectToDelete);
+            session.beginTransaction().commit();
+        }
+        catch (Exception exception)
+        {
+            LOGGER.error(exception.getMessage());
+            System.out.printf("Ошибка при удалении объекта %d: %s", projectIdToDelete, exception.getMessage());
+        }
+        finally
+        {
+            if (session != null && session.isOpen())
+            {
+                session.close();
+            }
+        }
     }
 }

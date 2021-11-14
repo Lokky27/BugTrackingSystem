@@ -17,12 +17,20 @@ public class HibernateSessionFactoryUtil
 
     public static SessionFactory getSessionFactory()
     {
-        if (sessionFactory == null)
+        try
         {
-            StandardServiceRegistry standardServiceRegistry = new StandardServiceRegistryBuilder().configure("hibernate.cfg.xml").build();
-            Metadata metadata = new MetadataSources(standardServiceRegistry).getMetadataBuilder().build();
-            sessionFactory = metadata.getSessionFactoryBuilder().build();
+            if (sessionFactory == null)
+            {
+                StandardServiceRegistry standardServiceRegistry = new StandardServiceRegistryBuilder().configure("hibernate.cfg.xml").build();
+                Metadata metadata = new MetadataSources(standardServiceRegistry).getMetadataBuilder().build();
+                sessionFactory = metadata.getSessionFactoryBuilder().build();
+            }
+            return sessionFactory;
         }
-        return sessionFactory;
+        catch (Throwable exception)
+        {
+            System.err.println("Initial SessionFactory creation failed: " + exception);
+            throw new ExceptionInInitializerError(exception);
+        }
     }
 }
