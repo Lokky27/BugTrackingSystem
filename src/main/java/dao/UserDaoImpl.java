@@ -1,10 +1,10 @@
 package dao;
 
-import models.Task;
 import models.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 import utils.HibernateSessionFactoryUtil;
 
 import java.sql.SQLException;
@@ -28,7 +28,8 @@ public class UserDaoImpl implements UserDao
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка при получении пользователя с ID %d: %s", id, exception.getMessage());
+            System.out.printf("Ошибка при получении пользователя с ID %d: %s\n", id, exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -53,7 +54,8 @@ public class UserDaoImpl implements UserDao
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка при получении всех пользователей: %s", exception.getMessage());
+            System.out.printf("Ошибка при получении всех пользователей: %s\n", exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -72,14 +74,15 @@ public class UserDaoImpl implements UserDao
         try
         {
             session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
             session.save(user);
-            session.getTransaction().commit();
+            transaction.commit();
         }
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка при добавлении пользователя %s: %s", user.getName(), exception.getMessage());
+            System.out.printf("Ошибка при добавлении пользователя %s: %s\n", user.getName(), exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -97,14 +100,15 @@ public class UserDaoImpl implements UserDao
         try
         {
             session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
             session.update(newUser);
-            session.getTransaction().commit();
+            transaction.commit();
         }
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка при обновлении пользователя с ID %d: %s", idUserToUpdate, exception.getMessage());
+            System.out.printf("Ошибка при обновлении пользователя с ID %d: %s\n", idUserToUpdate, exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -122,15 +126,16 @@ public class UserDaoImpl implements UserDao
         try
         {
             session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
             User userToDelete = session.get(User.class, deletedUserId);
             session.delete(userToDelete);
-            session.beginTransaction().commit();
+            transaction.commit();
         }
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка при удалении пользователя с ID %d: %s", deletedUserId, exception.getMessage());
+            System.out.printf("Ошибка при удалении пользователя с ID %d: %s\n", deletedUserId, exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -139,6 +144,5 @@ public class UserDaoImpl implements UserDao
                 session.close();
             }
         }
-
     }
 }

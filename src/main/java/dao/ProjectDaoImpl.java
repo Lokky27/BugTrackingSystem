@@ -4,6 +4,7 @@ import models.Project;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 import utils.HibernateSessionFactoryUtil;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ public class ProjectDaoImpl implements ProjectDao
         {
             LOGGER.error(exception.getMessage());
             System.out.println("Ошибка при пополучении проекта по ID: " + exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -42,7 +44,7 @@ public class ProjectDaoImpl implements ProjectDao
     public List<Project> getAllProjects() throws SQLException
     {
         Session session = null;
-        List projects = new ArrayList<>();
+        List<Project> projects = new ArrayList<>();
         try
         {
             session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
@@ -52,6 +54,7 @@ public class ProjectDaoImpl implements ProjectDao
         {
             LOGGER.error(exception.getMessage());
             System.out.println("Ошибка при получении списка всех проектов: " + exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -70,14 +73,15 @@ public class ProjectDaoImpl implements ProjectDao
         try
         {
             session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
             session.save(project);
-            session.getTransaction().commit();
+            transaction.commit();
         }
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
             System.out.println("Ошибка при сохранении проекта: " + exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -95,14 +99,15 @@ public class ProjectDaoImpl implements ProjectDao
         try
         {
             session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
             session.update(newProject);
-            session.getTransaction().commit();
+            transaction.commit();
         }
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка обновления объекта с ID %d: %s", projectIdToUpdate, exception.getMessage());
+            System.out.printf("Ошибка обновления объекта с ID %d: %s\n", projectIdToUpdate, exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -120,15 +125,16 @@ public class ProjectDaoImpl implements ProjectDao
         try
         {
             session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
             Project projectToDelete = session.get(Project.class, projectIdToDelete);
             session.delete(projectToDelete);
-            session.beginTransaction().commit();
+            transaction.commit();
         }
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка при удалении объекта %d: %s", projectIdToDelete, exception.getMessage());
+            System.out.printf("Ошибка при удалении объекта %d: %s\n", projectIdToDelete, exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {

@@ -21,9 +21,10 @@ public class Project
 
     private String name;
 
+    @Column(name = "deadline")
     private Date deadLine;
 
-    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<Task> tasks = new ArrayList<>();
 

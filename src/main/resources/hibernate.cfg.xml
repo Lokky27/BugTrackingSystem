@@ -19,6 +19,7 @@
         <!-- Drop and re-create the database schema on startup -->
         <property name="hbm2ddl.auto">update</property>
         <property name="hibernate.connection.autocommit">false</property>
+        <property name="hibernate.enable_lazy_load_no_trans">true</property>
 
         <mapping class="models.Task"/>
         <mapping class="models.User"/>

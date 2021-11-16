@@ -155,8 +155,9 @@ public class BugTrackingApp
             }
             catch (Exception exception)
             {
-                System.out.println("Что-то здесь не так: " + exception.getMessage());
+                System.out.println("Ошибка: " + exception.getMessage());
                 LOGGER.error(exception.getStackTrace());
+                exception.printStackTrace();
             }
         }
     }
@@ -182,7 +183,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка при добавлении проекта {}", exception.getMessage());
-                System.out.printf("Ошибка при добавлении проекта %s", exception.getMessage());
+                System.out.printf("Ошибка при добавлении проекта %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -215,7 +217,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка при обновлении проекта {}", exception.getMessage());
-                System.out.printf("Ошибка при обновлении проекта %s", exception.getMessage());
+                System.out.printf("Ошибка при обновлении проекта %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
 
         }
@@ -240,7 +243,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка при удалении проекта: {}", exception.getMessage());
-                System.out.printf("Ошибка при удалении проекта: %s", exception.getMessage());
+                System.out.printf("Ошибка при удалении проекта: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -251,7 +255,7 @@ public class BugTrackingApp
         {
             try
             {
-                System.out.println("Введите ID проекта: ");
+                System.out.print("Введите ID проекта: ");
                 Long projectId = Long.parseLong(scanner.nextLine());
                 Project project = projectService.findProjectById(projectId);
                 System.out.println("Вы выбрали проект: " + project.getName() +
@@ -271,6 +275,10 @@ public class BugTrackingApp
                         getTaskInfo();
                         break;
                     case TASKS:
+                        if (project.getTasks().isEmpty())
+                        {
+                            System.out.printf("На проекте %s нет активных задач!\n", project.getName());
+                        }
                         project.getTasks().forEach(System.out::println);
                         break;
                     case ADD_TASK:
@@ -291,7 +299,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка при получении проекта: {}", exception.getMessage());
-                System.out.printf("Ошибка при получении проекта: %s", exception.getMessage());
+                System.out.printf("Ошибка при получении проекта: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -302,9 +311,10 @@ public class BugTrackingApp
         {
             try
             {
-                System.out.println("Введите ID задачи: ");
+                System.out.print("Введите ID задачи: ");
                 Long taskId = Long.parseLong(scanner.nextLine().trim());
-                if (taskService.findTaskById(taskId) != null) {
+                if (taskService.findTaskById(taskId) != null)
+                {
                     Task task = taskService.findTaskById(taskId);
                     System.out.println(task);
                     break;
@@ -315,7 +325,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка при получении задачи: {}", exception.getMessage());
-                System.out.printf("Ошибка при получении задачи: %s", exception.getMessage());
+                System.out.printf("Ошибка при получении задачи: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -326,18 +337,16 @@ public class BugTrackingApp
         {
             try
             {
-                Project project = projectService.findProjectById(projectId);
                 Task task = createTask();
                 User user = getUser();
                 taskService.saveTask(task, user.getId(), projectId);
-                project.getTasks().add(task);
-                user.getTasks().add(task);
                 break;
             }
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка при добавлении задачи в проект: {}", exception.getMessage());
-                System.out.printf("Ошибка при добавлении задачи в проект: %s", exception.getMessage());
+                System.out.printf("Ошибка при добавлении задачи в проект: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -369,7 +378,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка при обновлении задачи в проекте: {}", exception.getMessage());
-                System.out.printf("Ошибка при обновлении задачи в проекте: %s", exception.getMessage());
+                System.out.printf("Ошибка при обновлении задачи в проекте: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -380,7 +390,7 @@ public class BugTrackingApp
         {
             try
             {
-                System.out.println("Введите ID задачи, которую нужно удалить");
+                System.out.print("Введите ID задачи, которую нужно удалить: ");
                 Long deletedTaskId = Long.parseLong(scanner.nextLine().trim());
                 LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл ID {} ", deletedTaskId);
                 if (taskService.findTaskById(deletedTaskId) != null)
@@ -396,7 +406,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка при удалении задачи из проекта: {}", exception.getMessage());
-                System.out.printf("Ошибка при удалении задачи из проекта: %s", exception.getMessage());
+                System.out.printf("Ошибка при удалении задачи из проекта: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -407,9 +418,9 @@ public class BugTrackingApp
         {
             try
             {
-                System.out.println("Введите ID исполнителя для задачи: ");
+                System.out.print("Введите ID исполнителя для задачи: ");
                 long userId = Long.parseLong(scanner.nextLine().trim());
-                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", COMMAND_HISTORY_MARKER);
+                LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", userId);
                 User user = userService.findUserById(userId);
                 if (user != null)
                 {
@@ -421,7 +432,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка получения исполнителя по ID: {}", exception.getMessage());
-                System.out.printf("Ошибка получения исполнителя по ID: %s", exception.getMessage());
+                System.out.printf("Ошибка получения исполнителя по ID: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -433,7 +445,7 @@ public class BugTrackingApp
             try
             {
                 User newUser = new User();
-                System.out.println("Введите имя для нового пользователя!");
+                System.out.print("Введите имя для нового пользователя: ");
                 String userName = scanner.nextLine().trim();
                 LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {} ", userName);
                 newUser.setName(userName);
@@ -443,7 +455,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка добавления пользователя: {}", exception.getMessage());
-                System.out.printf("Ошибка добавления пользователя: %s", exception.getMessage());
+                System.out.printf("Ошибка добавления пользователя: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -493,12 +506,13 @@ public class BugTrackingApp
                     break;
                 }
                 LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь с ID {} не найден", userIdToDelete);
-                System.out.printf("Пользователь с ID %d не найден", userIdToDelete);
+                System.out.printf("Пользователь с ID %d не найден\n", userIdToDelete);
             }
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка удаления пользователя: {}", exception.getMessage());
-                System.out.printf("Ошибка удаления пользователя: %s", exception.getMessage());
+                System.out.printf("Ошибка удаления пользователя: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
 
@@ -509,7 +523,7 @@ public class BugTrackingApp
         for (; ;)
         {
             try {
-                System.out.println("Введите ID пользователя: ");
+                System.out.print("Введите ID пользователя: ");
                 Long userId = Long.parseLong(scanner.nextLine());
                 User user = userService.findUserById(userId);
                 LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл {}", userId);
@@ -550,7 +564,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка получения пользователя: {}", exception.getMessage());
-                System.out.printf("Ошибка получения пользователя: %s", exception.getMessage());
+                System.out.printf("Ошибка получения пользователя: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -569,7 +584,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.info("Ошибка при добавлении задачи пользователю: {}", exception.getMessage());
-                System.out.printf("Ошибка при добавлении задачи пользователю: %s", exception.getMessage());
+                System.out.printf("Ошибка при добавлении задачи пользователю: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -593,15 +609,16 @@ public class BugTrackingApp
                         break;
                     }
                     LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена", taskIdToUpdate);
-                    System.out.printf("Задача с ID %d не найдена", taskIdToUpdate);
+                    System.out.printf("Задача с ID %d не найдена\n", taskIdToUpdate);
                 }
                 LOGGER.info(INVALID_QUERIES_MARKER, "Пользователь с ID {} не найден", userId);
-                System.out.printf("Пользователь с ID %d не найден", userId);
+                System.out.printf("Пользователь с ID %d не найден\n", userId);
             }
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка обновления задачи у пользователя: {}", exception.getMessage());
-                System.out.printf("Ошибка обновления задачи у пользователя: %s", exception.getMessage());
+                System.out.printf("Ошибка обновления задачи у пользователя: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -612,7 +629,7 @@ public class BugTrackingApp
         {
             try
             {
-                System.out.println("Введите ID задачи, которую нужно удалить");
+                System.out.print("Введите ID задачи, которую нужно удалить: ");
                 Long deletedTaskId = Long.parseLong(scanner.nextLine().trim());
                 LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл ID {} ", deletedTaskId);
                 if (taskService.findTaskById(deletedTaskId) != null)
@@ -623,12 +640,13 @@ public class BugTrackingApp
                     break;
                 }
                 LOGGER.info(INVALID_QUERIES_MARKER, "Задача с ID {} не найдена!", deletedTaskId);
-                System.out.printf("Задача с ID %d не найдена", deletedTaskId);
+                System.out.printf("Задача с ID %d не найдена\n", deletedTaskId);
             }
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка удаления задачи у пользователя: {}", exception.getMessage());
-                System.out.printf("Ошибка удаления задачи у пользователя: %s", exception.getMessage());
+                System.out.printf("Ошибка удаления задачи у пользователя: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -652,7 +670,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка при получении проекта: {}", exception.getMessage());
-                System.out.printf("Ошибка при получении проекта: %s", exception.getMessage());
+                System.out.printf("Ошибка при получении проекта: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -687,7 +706,8 @@ public class BugTrackingApp
             catch (Exception exception)
             {
                 LOGGER.error("Ошибка создания задачи: {} ",exception.getMessage());
-                System.out.printf("Ошибка создания задачи: %s", exception.getMessage());
+                System.out.printf("Ошибка создания задачи: %s\n", exception.getMessage());
+                exception.printStackTrace();
             }
         }
     }
@@ -719,7 +739,8 @@ public class BugTrackingApp
         catch (Exception exception)
         {
             LOGGER.error("Ошибка при записи в файл: {}", exception.getMessage());
-            System.out.println("Ошибка при записи в файл" + exception.getMessage());
+            System.out.println("Ошибка при записи в файл - " + exception.getMessage());
+            exception.printStackTrace();
         }
     }
 }

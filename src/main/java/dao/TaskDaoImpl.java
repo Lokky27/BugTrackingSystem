@@ -32,7 +32,8 @@ public class TaskDaoImpl implements TaskDao
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка при поиске задачи с ID %d: %s", id, exception.getMessage());
+            System.out.printf("Ошибка при поиске задачи с ID %d: %s\n", id, exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -42,7 +43,7 @@ public class TaskDaoImpl implements TaskDao
             }
 
         }
-        return HibernateSessionFactoryUtil.getSessionFactory().openSession().get(Task.class, id);
+        return task;
     }
 
     @Override
@@ -59,6 +60,7 @@ public class TaskDaoImpl implements TaskDao
         {
             LOGGER.error(exception.getMessage());
             System.out.printf("Ошибка при получении всех задач: %s", exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -76,18 +78,22 @@ public class TaskDaoImpl implements TaskDao
         Session session = null;
         try
         {
-            session = HibernateSessionFactoryUtil.getSessionFactory().getCurrentSession();
-            session.beginTransaction();
+            session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Transaction transaction = session.beginTransaction();
             User user = session.get(User.class, userId);
             Project project = session.get(Project.class, projectId);
             savingTask.setUser(user);
             savingTask.setProject(project);
+            user.getTasks().add(savingTask);
+            project.getTasks().add(savingTask);
             session.save(savingTask);
+            transaction.commit();
         }
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка добавления задчи ID %d: %s", savingTask.getId(), exception.getMessage());
+            System.out.printf("Ошибка добавления задчи ID %d: %s\n", savingTask.getId(), exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -105,13 +111,15 @@ public class TaskDaoImpl implements TaskDao
         try
         {
             session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
             session.update(newTask);
+            transaction.commit();
         }
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка обновления задачи с ID %d: %s",updatedTaskId, exception.getMessage());
+            System.out.printf("Ошибка обновления задачи с ID %d: %s\n",updatedTaskId, exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
@@ -128,17 +136,18 @@ public class TaskDaoImpl implements TaskDao
         Session session = null;
         try
         {
-            session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            session.beginTransaction();
+            session = HibernateSessionFactoryUtil.getSessionFactory().getCurrentSession();
+            Transaction transaction = session.beginTransaction();
             Query query = session.createQuery("delete from Task where user_id = :userId and project_id = :projectId");
             query.setParameter("userId", userId);
             query.setParameter("projectId", projectId);
-            session.beginTransaction().commit();
+            transaction.commit();
         }
         catch (Exception exception)
         {
             LOGGER.error(exception.getMessage());
-            System.out.printf("Ошибка при удалении задачи ID %d: %s", taskId, exception.getMessage());
+            System.out.printf("Ошибка при удалении задачи ID %d: %s\n", taskId, exception.getMessage());
+            exception.printStackTrace();
         }
         finally
         {
