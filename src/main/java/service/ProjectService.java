@@ -87,8 +87,12 @@ public class ProjectService
     {
         try
         {
-            projectDao.deleteProject(projectIdToDelete);
-            System.out.println("Проект удален из системы!");
+            if(findProjectById(projectIdToDelete).getTasks() == null)
+            {
+                projectDao.deleteProject(projectIdToDelete);
+                System.out.println("Проект удален из системы!");
+            }
+            System.out.println("Нельзя удалить проект, так как в нем есть активные задачи!");
         }
         catch (Exception exception)
         {

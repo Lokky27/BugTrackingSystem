@@ -85,7 +85,6 @@ public class TaskService
         try
         {
             taskDao.updateTask(taskToUpdate, newTask);
-            System.out.println("Задача обновлена");
         }
         catch (Exception exception)
         {
@@ -101,7 +100,6 @@ public class TaskService
         try
         {
             taskDao.deleteTask(taskId, userId, projectId);
-            System.out.println("Задача удалена");
         }
         catch (Exception exception)
         {

@@ -10,7 +10,6 @@ import org.hibernate.Transaction;
 import utils.HibernateSessionFactoryUtil;
 
 import javax.persistence.Query;
-import javax.transaction.Transactional;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,7 +112,19 @@ public class TaskDaoImpl implements TaskDao
         {
             session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
             Transaction transaction = session.beginTransaction();
-            session.update(newTask);
+            Query query = session.createQuery("update Task set " +
+                            "theme = :theme, " +
+                            "type = :type, " +
+                            "priority = :priority, " +
+                            "description = :description" +
+                    "where id = :id")
+                    .setParameter("theme", newTask.getTheme())
+                    .setParameter("type", newTask.getDescription())
+                    .setParameter("priority", newTask.getPriority())
+                    .setParameter("description", newTask.getDescription())
+                    .setParameter("id", updatedTaskId);
+            int result = query.executeUpdate();
+            System.out.println("Задач обновлено: " + result);
             transaction.commit();
         }
         catch (Exception exception)
@@ -142,6 +153,8 @@ public class TaskDaoImpl implements TaskDao
             Query query = session.createQuery("delete from Task where user_id = :userId and project_id = :projectId")
                     .setParameter("userId", userId)
                     .setParameter("projectId", projectId);
+            int result = query.executeUpdate();
+            System.out.println("Задач удалено: " + result);
             transaction.commit();
         }
         catch (Exception exception)

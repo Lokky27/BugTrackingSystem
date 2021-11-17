@@ -275,10 +275,6 @@ public class BugTrackingApp
                         getTaskInfo();
                         break;
                     case TASKS:
-                        if (project.getTasks().isEmpty())
-                        {
-                            System.out.printf("На проекте %s нет активных задач!\n", project.getName());
-                        }
                         project.getTasks().forEach(System.out::println);
                         break;
                     case ADD_TASK:
@@ -533,11 +529,13 @@ public class BugTrackingApp
                         "\n\tЧтобы посмотреть список всех задач у пользователя введите: " + TASKS +
                         "\n\tЧтобы добавить новую задачу пользователю введите: " + ADD_TASK +
                         "\n\tЧтобы обновить задачу у пользователя введите: " + UPDATE_COMMAND +
-                        "\n\tЧтобы удалить задачу у пользователя введите: " + DELETE_COMMAND);
+                        "\n\tЧтобы удалить задачу у пользователя введите: " + DELETE_COMMAND +
+                        "\n\tДля перехода в главное меню введите: " + BACK);
                 System.out.print("Введите комманду: ");
                 String userInput = scanner.nextLine().trim();
                 LOGGER.info(COMMAND_HISTORY_MARKER, "Пользователь ввёл команду {}", userInput);
-                switch (userInput) {
+                switch (userInput)
+                {
                     case INFO_COMMAND:
                         getTaskInfo();
                         break;
@@ -547,7 +545,6 @@ public class BugTrackingApp
                     case ADD_TASK:
                         addTaskToUser(userId);
                         break;
-
                     case UPDATE_COMMAND:
                         updateUserTask(userId);
                         break;
@@ -729,7 +726,7 @@ public class BugTrackingApp
                         task.getType() + "," + task.getDescription() +
                         "," + task.getPriority() + "," + task.getUser().getId() +
                         "," + task.getUser().getName() + "," + task.getProject().getId() +
-                        "," + task.getProject().getName() + "," + task.getProject().getDeadLine();
+                        "," + task.getProject().getName() + "," + task.getProject().getDeadLine() + "\n";
                 writer.write(itemBuilder);
             }
             writer.flush();

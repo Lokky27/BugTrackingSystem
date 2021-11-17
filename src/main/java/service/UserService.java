@@ -86,8 +86,13 @@ public class UserService
     {
         try
         {
-            userDao.deleteUser(deletedUserId);
-            System.out.println("Пользователь удален!");
+            if (findUserById(deletedUserId) == null)
+            {
+                userDao.deleteUser(deletedUserId);
+                System.out.println("Пользователь удален!");
+            }
+            System.out.println("Нельзя удалить пользователя, т.к. у него есть активные задачи!");
+
         }
         catch (Exception exception)
         {
